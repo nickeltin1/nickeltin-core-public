@@ -1,18 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
-using UnityEditor.PackageManager;
+using UnityEditor.Build;
+using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.Pool;
 
 namespace nickeltin.Core.Editor
 {
     /// <summary>
-    /// Utility that helps with managing Scripting Define Symbols
+    /// Manages Scripting Define Symbols fore nickeltin-core and its modules.
     /// </summary>
-    internal static class DefinesUtil
+    internal static class NickeltinCoreDefines
     {
+        /// <summary>
+        /// If package installed from git (with package manager, meaning its readonly), this will be defined.
+        /// </summary>
+        public const string PACKAGE_READONLY = "NICKELTIN_READONLY";
+        
+        /// <summary>
+        /// Project define whether core package installed.
+        /// </summary>
+        public const string PACKAGE_INSTALLED = "NICKELTIN_INSTALLED";
+
+        public static readonly System.Reflection.Assembly CoreEditorAssembly = typeof(NickeltinCoreDefines).Assembly;
+
+        public static string CoreEditorAssemblyName => CoreEditorAssembly.GetName().Name;
+
+        public static readonly string CoreEditorAssemblyDefinitionPath =
+            CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(CoreEditorAssemblyName);
+    
+        public const string Name = "com.nickeltin.core";
+        
+        public static bool IsReadonly { get; private set; }
+        
+        
         private static FileSystemWatcher _coreAsmDefWatcher;
         private static Dictionary<Type, ModuleDefinition> _modules;
         
@@ -66,27 +90,25 @@ namespace nickeltin.Core.Editor
             DictionaryPool<Type, ModuleImplementation>.Release(impls);
             HashSetPool<string>.Release(defSymbolsSet);
             
-            UpdateDefineSymbols();
-            
-            InitDeletionWatcher();
-        }
-
-        private static void InitDeletionWatcher()
-        {
-            var directory = Path.GetDirectoryName(NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)!;
-            var file = Path.GetFileName(NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)!;
+             var directory = Path.GetDirectoryName(CoreEditorAssemblyDefinitionPath)!;
+            var file = Path.GetFileName(CoreEditorAssemblyDefinitionPath)!;
             _coreAsmDefWatcher = new FileSystemWatcher(directory, file);
             _coreAsmDefWatcher.EnableRaisingEvents = true;
             _coreAsmDefWatcher.Deleted += OnAsmDefDeleted;
+            
+            UpdateDefineSymbols(false);
         }
 
         private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
         {
-            Debug.Log(e.FullPath);
-            Debug.Log(NickeltinCoreInfo.Name + " deleted");
+            UpdateDefineSymbols(true);
         }
 
-        public static void UpdateDefineSymbols()
+        /// <summary>
+        /// Will add defines for all modules as well as <see cref="PACKAGE_INSTALLED"/> and <see cref="PACKAGE_READONLY"/> defines.
+        /// </summary>
+        /// <param name="packageRemoved">If true update will be treated as core package were deletes, will remove default defines but keep modules defines</param>
+        public static void UpdateDefineSymbols(bool packageRemoved)
         {
             if (!TryGetDefineSymbols(out var defines, out var buildTargetGroup))
             {
@@ -100,90 +122,87 @@ namespace nickeltin.Core.Editor
             {
                 if (moduleDefinition.Defined)
                 {
-                    TryAddDefine(ref defines, moduleDefinition.DEFINE_SYMBOL, ref changed);
+                    TryAddDefine(defines, moduleDefinition.DEFINE_SYMBOL, ref changed);
                 }
                 else
                 {
-                    TryRemoveDefine(ref defines, moduleDefinition.DEFINE_SYMBOL, ref changed);
+                    TryRemoveDefine(defines, moduleDefinition.DEFINE_SYMBOL, ref changed);
                 }
+            }
+
+            if (packageRemoved)
+            {
+                TryRemoveDefine(defines, PACKAGE_INSTALLED, ref changed);
+            }
+            else
+            {
+                TryAddDefine(defines, PACKAGE_INSTALLED, ref changed);
+            }
+            
+            // If asmdef file is open for edit it means it installed as local package.
+            var isOpenForEdit = AssetDatabase.IsOpenForEdit(CoreEditorAssemblyDefinitionPath);
+            
+            IsReadonly = !isOpenForEdit;
+
+            if (IsReadonly && !packageRemoved)
+            {
+                TryAddDefine(defines, PACKAGE_READONLY, ref changed);
+            }
+            else
+            {
+                TryRemoveDefine(defines, PACKAGE_READONLY, ref changed);
             }
 
             if (changed)
             {
-                SetDefineSymbols(buildTargetGroup, defines);
+                SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
-        }
-
-        public static bool TryAddDefine(string defineSymbol)
-        {
-            var changed = false;
-            if (TryGetDefineSymbols(out var defines, out var buildTargetGroup) 
-                && TryAddDefine(ref defines, defineSymbol, ref changed))
-            {
-                SetDefineSymbols(buildTargetGroup, defines);
-                return true;
-            }
-
-            return false;
         }
         
-        public static bool TryRemoveDefine(string defineSymbol)
+        private static bool TryGetDefineSymbols(out HashSet<string> defines, out NamedBuildTarget target)
         {
-            var changed = false;
-            if (TryGetDefineSymbols(out var defines, out var buildTargetGroup) 
-                && TryRemoveDefine(ref defines, defineSymbol, ref changed))
-            {
-                SetDefineSymbols(buildTargetGroup, defines);
-                return true;
-            }
+            defines = new HashSet<string>();
+            var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            target = NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
 
-            return false;
-        }
-
-        private static bool TryGetDefineSymbols(out string[] defines, out BuildTargetGroup group)
-        {
-            defines = null;
-            group = EditorUserBuildSettings.selectedBuildTargetGroup;
-
-            if (group == BuildTargetGroup.Unknown)
+            if (buildTargetGroup == BuildTargetGroup.Unknown)
             {
                 return false;
             }
-            
-            PlayerSettings.GetScriptingDefineSymbolsForGroup(group, out defines);
+
+            PlayerSettings.GetScriptingDefineSymbols(target, out var definesArray);
+            defines = definesArray.ToHashSet();
             return true;
         }
 
-        private static void SetDefineSymbols(BuildTargetGroup currentTarget, string[] defines)
+        private static void SetDefineSymbols(NamedBuildTarget target, string[] defines)
         {
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(currentTarget, defines);
+            PlayerSettings.SetScriptingDefineSymbols(target, defines);
         }
         
-        private static bool TryAddDefine(ref string[] defines, string defineSymbol, ref bool changedFlag)
+        private static bool TryAddDefine(HashSet<string> defines, string defineSymbol, ref bool changedFlag)
         {
-            if (ArrayUtility.Contains(defines, defineSymbol))
+            if (defines.Add(defineSymbol))
             {
-                return false;
-            }
-            
-            ArrayUtility.Add(ref defines, defineSymbol);
-            changedFlag = true;
-            return true;
-        }
-        
-        private static bool TryRemoveDefine(ref string[] defines, string defineSymbol, ref bool changedFlag)
-        {
-            if (ArrayUtility.Contains(defines, defineSymbol))
-            {
-                ArrayUtility.Remove(ref defines, defineSymbol);
                 changedFlag = true;
                 return true;
             }
-            
+
             return false;
         }
         
-        public static ModuleDefinition GetDefinition(Type definitionType)
+        private static bool TryRemoveDefine(HashSet<string> defines, string defineSymbol, ref bool changedFlag)
+        {
+            if (defines.Remove(defineSymbol))
+            {
+                changedFlag = true;
+                return true;
+            }
+
+            return false;
+        }
+        
+        public static ModuleDefinition GetModuleDefinition(Type definitionType)
         {
             if (_modules == null)
             {
