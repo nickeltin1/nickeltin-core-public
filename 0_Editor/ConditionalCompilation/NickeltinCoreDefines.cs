@@ -156,6 +156,7 @@ namespace nickeltin.Core.Editor
 
             if (changed)
             {
+                Debug.Log("Defines changed, curretn defines list: " + string.Join(",\n", defines));
                 SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
         }
