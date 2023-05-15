@@ -26,7 +26,7 @@
         public const string utilsMenu = baseMenu + utils;
         
         public const string embeddedPackages = "EmbeddedPackages/";
-        public const string embeddedPackagesMenu = internalMenu + embeddedPackages;
+        public const string embeddedPackagesMenu = baseMenu + embeddedPackages;
 
         public const string other = "Other/";
         public const string otherMenu = baseMenu + other;
