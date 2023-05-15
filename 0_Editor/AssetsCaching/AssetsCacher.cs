@@ -79,11 +79,6 @@ namespace nickeltin.Core.Editor.AssetsCaching
             }
         }
 
-        public static void TryCacheSubsystem<T>(ref T variable) where T : SubSystem
-        {
-            if (variable == null) SubSystem.TryFind(out variable);
-        }
-        
         public static void AddCreatedAsset<T>(ref T[] array, T obj)
         {
             array ??= Array.Empty<T>();

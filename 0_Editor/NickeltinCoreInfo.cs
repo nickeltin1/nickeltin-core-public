@@ -3,16 +3,16 @@ using UnityEditor.Compilation;
 
 namespace nickeltin.Core.Editor
 {
-    internal static class NickeltinPackageInfo
+    internal static class NickeltinCoreInfo
     {
-        public static readonly System.Reflection.Assembly CoreEditorAssembly = typeof(NickeltinPackageInfo).Assembly;
+        public static readonly System.Reflection.Assembly CoreEditorAssembly = typeof(NickeltinCoreInfo).Assembly;
 
         public static string CoreEditorAssemblyName => CoreEditorAssembly.GetName().Name;
 
         public static readonly string CoreEditorAssemblyDefinitionPath =
             CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(CoreEditorAssemblyName);
     
-        public const string Name = "com.nickeltin.nickeltin-lib";
+        public const string Name = "com.nickeltin.core";
 
         /// <summary>
         /// If package installed from git (with package manager, meaning its readonly), this will be defined.

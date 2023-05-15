@@ -63,7 +63,7 @@ namespace nickeltin.Core.Editor
         {
             if (_packageFindRequest.IsCompleted)
             {
-                var package = _packageFindRequest.Result.First(p => p.name == Core.Editor.NickeltinPackageInfo.Name);
+                var package = _packageFindRequest.Result.First(p => p.name == Core.Editor.NickeltinCoreInfo.Name);
                 if (_packageFindRequest.Status == StatusCode.Success)
                 {
                     _requestCallback(package); 
@@ -101,7 +101,7 @@ namespace nickeltin.Core.Editor
         {
             if (info.source != PackageSource.Git)
             {
-                Debug.LogError($"Package {NickeltinPackageInfo.Name} installed not from GIT!");
+                Debug.LogError($"Package {NickeltinCoreInfo.Name} installed not from GIT!");
                 return;
             }
             
@@ -162,7 +162,7 @@ namespace nickeltin.Core.Editor
         {
             if (info.source != PackageSource.Git)
             {
-                Debug.LogError($"Package {NickeltinPackageInfo.Name} installed not from GIT!");
+                Debug.LogError($"Package {NickeltinCoreInfo.Name} installed not from GIT!");
                 return;
             }
             
