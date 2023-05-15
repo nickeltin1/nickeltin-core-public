@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.nickeltin.nickeltin-lib/Editor/EmbeddedPackages/ImporterWindow/ImporterWindowUSS.uss?fileID=7433441132597879392&amp;guid=581e891a37e7a9d47b5a4bddb9206855&amp;type=3#ImporterWindowUSS" />
+    <Style src="project://database/Packages/com.nickeltin.nickeltin-lib/Editor/EmbeddedPackages/ImporterWindow/PackagePreview.uss?fileID=7433441132597879392&amp;guid=d728515f971ceb84c8bf4a7ce4a60423&amp;type=3#PackagePreview" />
+    <ui:VisualElement name="toolbar" style="height: 24px;">
+        <ui:IMGUIContainer name="container" />
+    </ui:VisualElement>
+    <nickeltin.Core.Editor.EmbeddedPackages.ImportWindow.SplitView name="split-view" fixed-pane-initial-dimension="300">
+        <ui:VisualElement name="packages" class="split-view-element container" style="min-width: 200px; width: 300px; justify-content: space-between;">
+            <ui:VisualElement name="body" style="flex-direction: column;">
+                <ui:Label text="Packages" display-tooltip-when-elided="true" class="title" />
+                <uie:ToolbarSearchField focusable="true" name="search" style="width: auto;" />
+                <ui:ListView fixed-item-height="24" show-alternating-row-backgrounds="All" show-bound-collection-size="false" horizontal-scrolling="false" class="packages-list" />
+            </ui:VisualElement>
+            <ui:VisualElement name="footer">
+                <ui:Label text="VALIDATING..." display-tooltip-when-elided="true" name="validation-label" style="-unity-text-align: upper-center; -unity-font-style: bold; transform-origin: bottom; margin-bottom: 4px; background-color: rgb(77, 77, 77);" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="package-inspector" class="split-view-element" style="min-width: 400px;">
+            <ui:Label text="Package overview" class="title" />
+            <ui:ScrollView class="container">
+                <ui:IMGUIContainer name="container" style="flex-grow: 1; height: auto;" />
+            </ui:ScrollView>
+        </ui:VisualElement>
+    </nickeltin.Core.Editor.EmbeddedPackages.ImportWindow.SplitView>
+</ui:UXML>

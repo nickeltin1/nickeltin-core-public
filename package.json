@@ -1,0 +1,16 @@
+﻿{
+  "name": "com.nickeltin.core",
+  "version": "0.0.1",
+  "displayName": "nickeltin-core",
+  "description": "Core used by many nickeltin-lib modules",
+  "unity": "2021.1",
+  "dependencies": { },
+  "keywords": [
+    "nickeltin"
+  ],
+  "author": {
+    "name": "Valentyn Romanyshyn",
+    "email": "valentun001@gmail.com"
+  },
+  "hideInEditor": true
+}

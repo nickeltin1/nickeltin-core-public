@@ -1,0 +1,57 @@
+PackagePreview {
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 2px;
+    border-left-color: rgba(29, 29, 29, 0.4);
+    border-right-color: rgba(29, 29, 29, 0.4);
+    border-top-color: rgba(29, 29, 29, 0.4);
+    border-bottom-color: rgba(29, 29, 29, 0.4);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+}
+
+PackagePreview #name {
+    font-size: 14px;
+    color: rgb(255, 255, 255);
+}
+
+PackagePreview #left-container {
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: row;
+    padding-top: 2px;
+}
+
+PackagePreview .deprecated {
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: row;
+    border-left-color: rgba(255, 158, 0, 255);
+    border-right-color: rgba(255, 158, 0, 255);
+    border-top-color: rgba(255, 158, 0, 255);
+    border-bottom-color: rgba(255, 158, 0, 255);
+    border-left-width: 2px;
+    border-bottom-left-radius: 2px;
+    border-top-left-radius: 2px;
+}
+
+PackagePreview #state {
+}
+
+PackagePreview #author {
+    font-size: 10px;
+    -unity-text-align: middle-left;
+    color: rgb(183, 183, 183);
+}
+
+PackagePreview Image {
+    min-width: 20px;
+    min-height: 20px;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    margin-left: 4px;
+}
