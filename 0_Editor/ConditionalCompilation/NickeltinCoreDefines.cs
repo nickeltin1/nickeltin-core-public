@@ -60,15 +60,15 @@ namespace nickeltin.Core.Editor
                 var instance = (ModuleImplementation)Activator.CreateInstance(implType);
                 if (!instance.DefinitionType.IsSubclassOf(typeof(ModuleDefinition)))
                 {
-                    Debug.LogError($"{instance} linked with wrong definition type {instance.DefinitionType}. " +
-                                   $"Type should be inherited from {nameof(ModuleDefinition)}");
+                    Log($"{instance} linked with wrong definition type {instance.DefinitionType}. " +
+                                   $"Type should be inherited from {nameof(ModuleDefinition)}", LogType.Error);
                     continue;
                 }
                 
                 if (!impls.TryAdd(instance.DefinitionType, instance))
                 {
-                    Debug.LogError($"Multiple {nameof(ModuleImplementation)} registered for the same " +
-                                   $"{instance.DefinitionType} {nameof(ModuleDefinition)} type.");
+                    Log($"Multiple {nameof(ModuleImplementation)} registered for the same " +
+                                   $"{instance.DefinitionType} {nameof(ModuleDefinition)} type.", LogType.Error);
                 }
             }
 
@@ -84,8 +84,8 @@ namespace nickeltin.Core.Editor
                 }
                 else
                 {
-                    Debug.LogError($"Multiple {nameof(ModuleDefinition)} has the same " +
-                                   $"{nameof(ModuleDefinition.DEFINE_SYMBOL)} of \"{def.DEFINE_SYMBOL}\"");
+                    Log($"Multiple {nameof(ModuleDefinition)} has the same " +
+                                   $"{nameof(ModuleDefinition.DEFINE_SYMBOL)} of \"{def.DEFINE_SYMBOL}\"", LogType.Error);
                 }
             }
             
@@ -103,7 +103,7 @@ namespace nickeltin.Core.Editor
             {
                 if (packageInfo.name == Name)
                 {
-                    Debug.Log($"{Name} deleted, clearing up defines");
+                    Log($"Package deleted, clearing up defines");
                     UpdateDefineSymbols(true);
                     return;
                 }
@@ -118,7 +118,7 @@ namespace nickeltin.Core.Editor
         {
             if (!TryGetDefineSymbols(out var defines, out var buildTargetGroup))
             {
-                Debug.LogError($"Can't fetch build target group, current group: {buildTargetGroup}");
+                Log($"Can't fetch build target group, current group: {buildTargetGroup}", LogType.Error);
                 return;
             }
 
@@ -159,11 +159,16 @@ namespace nickeltin.Core.Editor
                 TryRemoveDefine(defines, PACKAGE_READONLY, ref changed);
             }
 
-            Debug.Log("Current defines: " + string.Join(",\n", defines));
             if (changed)
             {
+                Log("Defines changed:\n" + string.Join(",\n", defines));
                 SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
+        }
+
+        private static void Log(object msg, LogType logType = LogType.Log)
+        {
+            Debug.LogFormat(logType, LogOption.NoStacktrace, null, "<b>{0}</b>: {1}", Name, msg);
         }
         
         private static bool TryGetDefineSymbols(out HashSet<string> defines, out NamedBuildTarget target)
