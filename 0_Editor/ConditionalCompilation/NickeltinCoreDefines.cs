@@ -6,6 +6,7 @@ using System.Threading;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Compilation;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -37,15 +38,13 @@ namespace nickeltin.Core.Editor
         
         public static bool IsReadonly { get; private set; }
 
-
-        private static SynchronizationContext _synchronizationContext;
+        
         private static FileSystemWatcher _coreAsmDefWatcher;
         private static Dictionary<Type, ModuleDefinition> _modules;
         
         [InitializeOnLoadMethod]
         private static void Init()
         {
-            _synchronizationContext = SynchronizationContext.Current;
             _modules = new Dictionary<Type, ModuleDefinition>();
             
             var implTypes = TypeCache.GetTypesDerivedFrom<ModuleImplementation>();
@@ -92,28 +91,18 @@ namespace nickeltin.Core.Editor
             
             DictionaryPool<Type, ModuleImplementation>.Release(impls);
             HashSetPool<string>.Release(defSymbolsSet);
-            
-             var directory = Path.GetDirectoryName(CoreEditorAssemblyDefinitionPath)!;
-            var file = Path.GetFileName(CoreEditorAssemblyDefinitionPath)!;
-            _coreAsmDefWatcher = new FileSystemWatcher(directory, file);
-            _coreAsmDefWatcher.EnableRaisingEvents = true;
-            _coreAsmDefWatcher.Deleted += OnAsmDefDeleted;
+
+            Events.registeredPackages += EventsOnregisteredPackages;
             
             UpdateDefineSymbols(false);
         }
 
-        private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
+        private static void EventsOnregisteredPackages(PackageRegistrationEventArgs obj)
         {
-            Debug.Log("Package deleted!");
-            Debug.Log("Running on unity thread: " + (_synchronizationContext == SynchronizationContext.Current));
-            // EditorApplication.LockReloadAssemblies();
-            UpdateDefineSymbols(true);
-            // EditorApplication.UnlockReloadAssemblies();
-            _synchronizationContext.Post(state =>
+            foreach (var packageInfo in obj.removed)
             {
-                Debug.Log("Sync context!");
-                Debug.Log("Running on unity thread: " + (_synchronizationContext == SynchronizationContext.Current));
-            }, null);
+                Debug.Log("Removed package: " + packageInfo.name);
+            }
         }
 
         /// <summary>
