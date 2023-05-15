@@ -1,5 +1,0 @@
-.title {
-    -unity-text-align: upper-center;
-    background-color: rgba(34, 34, 34, 0.6);
-    font-size: 14px;
-}
