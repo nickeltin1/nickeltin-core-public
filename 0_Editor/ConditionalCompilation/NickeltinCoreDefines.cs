@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Compilation;
@@ -35,14 +36,16 @@ namespace nickeltin.Core.Editor
         public const string Name = "com.nickeltin.core";
         
         public static bool IsReadonly { get; private set; }
-        
-        
+
+
+        private static SynchronizationContext _synchronizationContext;
         private static FileSystemWatcher _coreAsmDefWatcher;
         private static Dictionary<Type, ModuleDefinition> _modules;
         
         [InitializeOnLoadMethod]
         private static void Init()
         {
+            _synchronizationContext = SynchronizationContext.Current;
             _modules = new Dictionary<Type, ModuleDefinition>();
             
             var implTypes = TypeCache.GetTypesDerivedFrom<ModuleImplementation>();
@@ -101,8 +104,13 @@ namespace nickeltin.Core.Editor
 
         private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
         {
-            Debug.Log("Package deleted!");
-            UpdateDefineSymbols(true);
+            _synchronizationContext.Send(state =>
+            {
+                Debug.Log("Package deleted!");
+                EditorApplication.LockReloadAssemblies();
+                UpdateDefineSymbols(true);
+                EditorApplication.UnlockReloadAssemblies();
+            }, null);
         }
 
         /// <summary>
