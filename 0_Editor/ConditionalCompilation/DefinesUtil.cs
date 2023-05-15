@@ -11,6 +11,28 @@ namespace nickeltin.Core.Editor
     /// </summary>
     internal static class DefinesUtil
     {
+        private class PackageDeletionProcessor : AssetModificationProcessor
+        {
+            private static AssetDeleteResult OnWillDeleteAsset(string assetPath, RemoveAssetOptions options)
+            {
+                Debug.Log("Deleted asset " + assetPath);
+                if (assetPath == NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)
+                {
+                    Debug.Log(NickeltinCoreInfo.Name + " were deleted! path: " + assetPath);       
+                }
+                return AssetDeleteResult.DidNotDelete;
+            }
+
+            // private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
+            //     string[] movedFromAssetPaths)
+            // {
+            //     foreach (var deletedAsset in deletedAssets)
+            //     {
+            //         Debug.Log(deletedAsset);
+            //     }
+            // }
+        }
+    
         private static Dictionary<Type, ModuleDefinition> _modules;
         
         [InitializeOnLoadMethod]
