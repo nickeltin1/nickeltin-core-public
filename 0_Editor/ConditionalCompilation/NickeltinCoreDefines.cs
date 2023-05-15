@@ -154,9 +154,9 @@ namespace nickeltin.Core.Editor
                 TryRemoveDefine(defines, PACKAGE_READONLY, ref changed);
             }
 
+            Debug.Log("Current defines: " + string.Join(",\n", defines));
             if (changed)
             {
-                Debug.Log("Defines changed, curretn defines list: " + string.Join(",\n", defines));
                 SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
         }
