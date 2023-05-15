@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -11,22 +13,7 @@ namespace nickeltin.Core.Editor
     /// </summary>
     internal static class DefinesUtil
     {
-        private class PackageDeletionProcessor : AssetPostprocessor
-        {
-            private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
-                string[] movedFromAssetPaths)
-            {
-                foreach (var deletedAsset in deletedAssets)
-                {
-                    Debug.Log("Deleted asset " + deletedAsset);
-                    if (deletedAsset == NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)
-                    {
-                        Debug.Log(NickeltinCoreInfo.Name + " were deleted! path: " + deletedAsset);       
-                    }
-                }
-            }
-        }
-    
+        private static FileSystemWatcher _coreAsmDefWatcher;
         private static Dictionary<Type, ModuleDefinition> _modules;
         
         [InitializeOnLoadMethod]
@@ -80,6 +67,23 @@ namespace nickeltin.Core.Editor
             HashSetPool<string>.Release(defSymbolsSet);
             
             UpdateDefineSymbols();
+            
+            InitDeletionWatcher();
+        }
+
+        private static void InitDeletionWatcher()
+        {
+            var directory = Path.GetDirectoryName(NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)!;
+            var file = Path.GetFileName(NickeltinCoreInfo.CoreEditorAssemblyDefinitionPath)!;
+            _coreAsmDefWatcher = new FileSystemWatcher(directory, file);
+            _coreAsmDefWatcher.EnableRaisingEvents = true;
+            _coreAsmDefWatcher.Deleted += OnAsmDefDeleted;
+        }
+
+        private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
+        {
+            Debug.Log(e.FullPath);
+            Debug.Log(NickeltinCoreInfo.Name + " deleted");
         }
 
         public static void UpdateDefineSymbols()
