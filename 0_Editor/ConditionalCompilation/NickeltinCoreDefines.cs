@@ -92,7 +92,7 @@ namespace nickeltin.Core.Editor
             DictionaryPool<Type, ModuleImplementation>.Release(impls);
             HashSetPool<string>.Release(defSymbolsSet);
 
-            Events.registeredPackages += EventsOnregisteredPackages;
+            Events.registeringPackages += EventsOnregisteredPackages;
             
             UpdateDefineSymbols(false);
         }
