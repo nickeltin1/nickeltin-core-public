@@ -104,13 +104,14 @@ namespace nickeltin.Core.Editor
 
         private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
         {
-            _synchronizationContext.Send(state =>
-            {
-                Debug.Log("Package deleted!");
-                EditorApplication.LockReloadAssemblies();
-                UpdateDefineSymbols(true);
-                EditorApplication.UnlockReloadAssemblies();
-            }, null);
+            Debug.Log("Package deleted!");
+            Debug.Log(_synchronizationContext == SynchronizationContext.Current);
+            // EditorApplication.LockReloadAssemblies();
+            UpdateDefineSymbols(true);
+            // EditorApplication.UnlockReloadAssemblies();
+            // _synchronizationContext.Send(state =>
+            // {
+            // }, null);
         }
 
         /// <summary>
