@@ -103,7 +103,6 @@ namespace nickeltin.Core.Editor
             {
                 if (packageInfo.name == Name)
                 {
-                    Log($"Package deleted, clearing up defines");
                     UpdateDefineSymbols(true);
                     return;
                 }
@@ -161,14 +160,14 @@ namespace nickeltin.Core.Editor
 
             if (changed)
             {
-                Log("Defines changed:\n" + string.Join(",\n", defines));
+                Log("Defines changed, current:\n" + string.Join(",\n", defines));
                 SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
         }
 
         private static void Log(object msg, LogType logType = LogType.Log)
         {
-            Debug.LogFormat(logType, LogOption.NoStacktrace, null, "<b>{0}</b>: {1}", Name, msg);
+            Debug.LogFormat(logType, LogOption.NoStacktrace, null, "<b>[{0}]</b> {1}", Name, msg);
         }
         
         private static bool TryGetDefineSymbols(out HashSet<string> defines, out NamedBuildTarget target)
