@@ -92,16 +92,21 @@ namespace nickeltin.Core.Editor
             DictionaryPool<Type, ModuleImplementation>.Release(impls);
             HashSetPool<string>.Release(defSymbolsSet);
 
-            Events.registeringPackages += EventsOnregisteredPackages;
+            Events.registeringPackages += OnRegisteringPackages;
             
             UpdateDefineSymbols(false);
         }
 
-        private static void EventsOnregisteredPackages(PackageRegistrationEventArgs obj)
+        private static void OnRegisteringPackages(PackageRegistrationEventArgs obj)
         {
             foreach (var packageInfo in obj.removed)
             {
-                Debug.Log("Removed package: " + packageInfo.name);
+                if (packageInfo.name == Name)
+                {
+                    Debug.Log($"{Name} deleted, clearing up defines");
+                    UpdateDefineSymbols(true);
+                    return;
+                }
             }
         }
 
