@@ -101,6 +101,7 @@ namespace nickeltin.Core.Editor
 
         private static void OnAsmDefDeleted(object sender, FileSystemEventArgs e)
         {
+            Debug.Log("Package deleted!");
             UpdateDefineSymbols(true);
         }
 
