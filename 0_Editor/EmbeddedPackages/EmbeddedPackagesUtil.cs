@@ -517,44 +517,5 @@ namespace nickeltin.Core.Editor.EmbeddedPackages
         }
         
         #endregion
-
-
-        #region Other
-        
-#if !NICKELTIN_READONLY
-        private static PackRequest _packRequest; 
-        
-        [MenuItem(MenuPathsUtility.packageMenu + "Pack Gzip")]
-        private static void PackGzip()
-        {
-            if (EditorExtension.TryGetActiveFolderPath(out var path))
-            {
-                // var outputPath = AssetDatabase.GenerateUniqueAssetPath(path + "/" + path.Split("/").Last() + ".gzip");
-                // Debug.Log(outputPath);
-                _packRequest = Client.Pack(path, path);
-                EditorApplication.update += WaitForGZipBuild;
-            }
-        }
-        
-        private static void WaitForGZipBuild()
-        {
-            if (!_packRequest.IsCompleted) return;
-
-            EditorApplication.update -= WaitForGZipBuild;
-            Log("Package builded, status: " + _packRequest.Status);
-            if (_packRequest.Status == StatusCode.Failure)
-            {
-                Log(_packRequest.Error.message.Red());
-            }
-            else
-            {
-                var identifer = "file:" + _packRequest.Result.tarballPath;
-                Log("Package created " + identifer);
-            }
-            AssetDatabase.Refresh();
-        }
-#endif
-
-        #endregion
     }
 }
