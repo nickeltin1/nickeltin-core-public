@@ -3,7 +3,7 @@
     public static class MenuPathsUtility
     {
         public const string assets = "Assets/";
-        public const string baseMenu = "nickeltin/";
+        public const string baseMenu = "Tools/nickeltin/";
 
         public const string internalMenu = baseMenu + "_internal/";
 
