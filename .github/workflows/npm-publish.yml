@@ -1,23 +1,21 @@
-name: "🚀 publish"
+name: 🚀 publish
 
 on:
-    push:
-        branches:
-          - main
+  push:
+    branches:
+      - main
 
 jobs:
-    release:
-        name: 🚀 publish
-        runs-on: ubuntu-latest
-        steps:
-            - name: 📚 checkout
-              uses: actions/checkout@v2.1.1
-            - name: 🟢 node
-              uses: actions/setup-node@v1.4.2
-              with:
-                  node-version: 12
-                  registry-url: https://nickeltin-private.glitch.me/
-            - name: 🚀 publish
-              run: npm publish --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+  build:
+    name: 🚀 publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://nickeltin-private.glitch.me/'
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
