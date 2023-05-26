@@ -7,4 +7,4 @@ on:
 
 jobs:
   npm_publish:
-    uses: 'nickeltin1/publish-to-npm-registry/.github/workflows/test.yml@main'
+    uses: 'nickeltin1/reusable-workflows/.github/workflows/test.yml@main'
