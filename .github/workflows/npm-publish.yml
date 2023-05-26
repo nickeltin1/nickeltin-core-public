@@ -11,6 +11,6 @@ jobs:
       target_branch: 'main'
       registry_url: 'https://nickeltin-private.glitch.me/'
     secrets:
-      token: ${{ secrets.TOKEN }}
+      token: ${{ secrets.GITHUB_TOKEN }}
       
       
