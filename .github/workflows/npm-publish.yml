@@ -6,5 +6,3 @@ on:
 jobs:
   npm_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-private-publish.yml@main'
-    with:
-      registry-url: https://nickeltin-private.glitch.me/
