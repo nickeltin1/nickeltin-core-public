@@ -5,7 +5,6 @@ on:
 
 jobs:
   npm_publish:
-    name: 🚀 publish
     uses: 'nickeltin1/publish-to-npm-registry/.github/workflows/reusable_npm_publish.yml@main'
     with:
       target_branch: 'main'
