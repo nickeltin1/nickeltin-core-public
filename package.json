@@ -1,6 +1,6 @@
 ﻿{
   "name": "com.nickeltin.core",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "displayName": "nickeltin-core",
   "description": "Core used by many nickeltin-lib modules",
   "unity": "2021.1",

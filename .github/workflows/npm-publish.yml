@@ -8,4 +8,3 @@ jobs:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/npm-publish.yml@main'
     with:
       registry-url: https://nickeltin-private.glitch.me/
-    secrets: inherit
