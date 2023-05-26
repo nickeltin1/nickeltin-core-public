@@ -1,6 +1,8 @@
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - prod
 jobs:
   npm_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/npm-publish.yml@main'
