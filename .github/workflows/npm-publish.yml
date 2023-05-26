@@ -7,4 +7,4 @@ jobs:
     with:
       registry_url: https://nickeltin-private.glitch.me/
     secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
+      token: ${{ secrets.NPM_AUTH_TOKEN }}
