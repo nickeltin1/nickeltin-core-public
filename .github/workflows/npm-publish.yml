@@ -1,9 +1,7 @@
-name: 🚀 publish
+name: test
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   npm_publish:
