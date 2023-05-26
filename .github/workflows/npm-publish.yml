@@ -1,8 +1,10 @@
-name: test
-
 on:
   workflow_dispatch:
 
 jobs:
   npm_publish:
-    uses: 'nickeltin1/reusable-workflows/.github/workflows/test.yml@main'
+    uses: 'nickeltin1/reusable-workflows/.github/workflows/npm_publish.yml@main'
+    with:
+      registry_url: https://nickeltin-private.glitch.me/
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
