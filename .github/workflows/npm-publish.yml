@@ -2,21 +2,15 @@ name: 🚀 publish
 
 on:
   push:
-    branches:
-      - main
 
 jobs:
-  build:
+  npm_publish:
     name: 🚀 publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          registry-url: 'https://nickeltin-private.glitch.me/'
-      - run: npm install
-      - run: npm ci
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+    uses: 'https://github.com/nickeltin1/publish-to-npm-registry/blob/main/.github/workflows/reusable_npm_publish.yml@main'
+    with:
+      target_branch: 'main'
+      registry_url: 'https://nickeltin-private.glitch.me/'
+    secrets:
+      token: ${{ secrets.TOKEN }}
+      
+      
