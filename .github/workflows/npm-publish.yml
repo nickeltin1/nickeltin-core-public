@@ -6,7 +6,7 @@ on:
 jobs:
   npm_publish:
     name: 🚀 publish
-    uses: 'https://github.com/nickeltin1/publish-to-npm-registry/blob/main/.github/workflows/reusable_npm_publish.yml@main'
+    uses: 'nickeltin1/publish-to-npm-registry/blob/main/.github/workflows/reusable_npm_publish.yml@main'
     with:
       target_branch: 'main'
       registry_url: 'https://nickeltin-private.glitch.me/'
