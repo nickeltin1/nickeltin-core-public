@@ -7,11 +7,4 @@ on:
 
 jobs:
   npm_publish:
-    uses: 'nickeltin1/publish-to-npm-registry/.github/workflows/reusable_npm_publish.yml@main'
-    with:
-      target_branch: 'main'
-      registry_url: 'https://nickeltin-private.glitch.me/'
-    secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
-      
-      
+    uses: 'nickeltin1/publish-to-npm-registry/.github/workflows/test.yml@main'
