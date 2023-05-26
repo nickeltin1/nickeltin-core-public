@@ -5,5 +5,5 @@ jobs:
   npm_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/npm-publish.yml@main'
     with:
-      registry_url: https://nickeltin-private.glitch.me/
+      registry-url: https://nickeltin-private.glitch.me/
     secrets: inherit
