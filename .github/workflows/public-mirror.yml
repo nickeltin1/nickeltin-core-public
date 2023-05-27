@@ -13,7 +13,7 @@ jobs:
       - name: git-sync
         uses: wei/git-sync@v3
         with:
-          source_repo: "https://github.com/nickeltin1/nickeltin-core"
+          source_repo: "nickeltin1/nickeltin-core"
           source_branch: "prod"
-          destination_repo: "https://github.com/nickeltin1/nickeltin-core-public"
+          destination_repo: "nickeltin1/nickeltin-core-public"
           destination_branch: "main"
