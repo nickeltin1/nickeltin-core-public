@@ -1,6 +1,7 @@
 # Mirrors pushes from prod to public branch
 
 on: 
+  workflow_dispatch:
   push:
     branches:
       - prod
