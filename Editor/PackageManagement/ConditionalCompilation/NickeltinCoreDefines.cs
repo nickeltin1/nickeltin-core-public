@@ -164,7 +164,7 @@ namespace nickeltin.Core.Editor
             }
         }
 
-        private static void Log(object msg, LogType logType = LogType.Log)
+        internal static void Log(object msg, LogType logType = LogType.Log)
         {
             Debug.LogFormat(logType, LogOption.NoStacktrace, null, "<b>[{0}]</b> {1}", Name, msg);
         }

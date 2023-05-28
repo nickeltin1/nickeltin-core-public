@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.Networking;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace nickeltin.Core.Editor
 {
@@ -18,67 +22,106 @@ namespace nickeltin.Core.Editor
                 return $"PackageData (version: {version})";
             }
         }
-    
-        private const string PACKAGE_JSON_URL = "https://raw.githubusercontent.com/nickeltin1/nickeltin-core-public/prod/package.json";
+
+
+        private const string SKIPPED_VERSION_KEY = NickeltinCoreDefines.Name + ".SKIPPED_VERSION";
+        private const string PROD_BRANCH = "prod";
+        private static string PACKAGE_JSON_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
         
         private static AddRequest _addRequest;
-        private static Version _currentVersion;
+        private static ListRequest _listRequest;
+        private static PackageInfo _packageInfo;
 
-        
+
         /// <summary>
-        /// TODO: fetch current version of core, if it installed from git check for updates
-        /// TODO: Show popup about update and save preferences to skip update if user wants to
         /// TODO: Context menus to download update
         /// TODO: Progress bar to show update
         /// </summary>
         [InitializeOnLoadMethod]
         private static void Init()
         {
-            _currentVersion = new Version(1,0,0);
+            _listRequest = Client.List(true);
+            EditorApplication.update += CheckPackageFetchRequest;
+        }
+        
+        private static void CheckPackageFetchRequest()
+        {
+            if (!_listRequest.IsCompleted) return;
             
+            if (_listRequest.Status == StatusCode.Success)
+            {
+                _packageInfo = _listRequest.Result.FirstOrDefault(p => p.name == NickeltinCoreDefines.Name);
+                if (_packageInfo is { source: PackageSource.Git })
+                {
+                    SendVersionValidationRequest(_packageInfo, false);
+                }
+            }
+
+            _listRequest = null;
+            EditorApplication.update -= CheckPackageFetchRequest;
         }
 
-        private static void SendVersionValidationRequest()
+        private static void SendVersionValidationRequest(PackageInfo packageInfo, bool forceShowUpdatePopup)
         {
-            var www = UnityWebRequest.Get(PACKAGE_JSON_URL);
-            Debug.Log("Fetching nickeltin-core package manifest from git repo");
+            var currentVersion = new Version(packageInfo.version);
+            var packageGitPath = new Uri(packageInfo.packageId);
+            Debug.Log(packageGitPath.AbsolutePath);
+            var www = UnityWebRequest.Get(PACKAGE_JSON_URL(packageGitPath.AbsolutePath.Trim('/')));
             var requestAsyncOperation = www.SendWebRequest();
-            requestAsyncOperation.completed += RequestCompletedCallback;
+            requestAsyncOperation.completed += operation =>
+            {
+                if (www.result == UnityWebRequest.Result.Success)
+                {
+                    var packageData = new PackageData();
+                    var packageJson = Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
+                    JsonUtility.FromJsonOverwrite(packageJson, packageData);
+                    var newVersion = Version.Parse(packageData.version);
+                    if (newVersion > currentVersion)
+                    {
+                        TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceShowUpdatePopup);
+                    }
+                }
+
+                www.Dispose();
+            };
         }
 
-        private static void RequestCompletedCallback(AsyncOperation operation)
+        private static void TryDisplayPackageUpdateDialog(PackageInfo packageInfo, Version currentVersion, Version newVersion, bool forceShowPopup)
         {
-            var www = ((UnityWebRequestAsyncOperation)operation).webRequest;
-            
-            if (www.result == UnityWebRequest.Result.Success)
+            if (!forceShowPopup)
             {
-                var packageData = new PackageData();
-                var packageJson = System.Text.Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
-                Debug.Log(packageJson);
-                JsonUtility.FromJsonOverwrite(packageJson, packageData);
-                var version = packageData.version;
-                if (Version.TryParse(version, out var parsedVersion))
+                var skippedVersionStr = EditorPrefs.GetString(SKIPPED_VERSION_KEY, "");
+                if (!string.IsNullOrEmpty(skippedVersionStr))
                 {
-                    if (parsedVersion > _currentVersion)
+                    var skippedVersion = new Version(skippedVersionStr);
+                    if (skippedVersion == newVersion)
                     {
-                        Debug.Log("Found a higher version: " + parsedVersion.ToString());
-                    }
-                    else
-                    {
-                        Debug.Log("No higher version found.");
+                        Debug.Log($"Not showing update dialog because version were skipped by user, dialog will be shown for next version avaliable.");
+                        return;
                     }
                 }
-                else
-                {
-                    Debug.LogError("Failed to parse version: " + version);
-                }
             }
-            else if (www.result != UnityWebRequest.Result.InProgress)
-            {
-                Debug.LogError("Failed to fetch package.json content: " + www.error);
-            }
+           
+        
+            var result = EditorUtility.DisplayDialogComplex($"{NickeltinCoreDefines.Name} version {newVersion} available!", 
+                $"New version of {NickeltinCoreDefines.Name} is avaliable. Current version: {currentVersion}, new version: {newVersion}. " +
+                $"Package that uses {NickeltinCoreDefines.Name} might require the latest version to function properly.",
+                "Install", "No, thanks", $"Don't show this message for version {newVersion}");
 
-            www.Dispose();
+
+            switch (result)
+            {
+                case 0:
+                    EditorPrefs.DeleteKey(SKIPPED_VERSION_KEY);
+                    Client.Add(packageInfo.packageId);
+                    break;
+                case 1:
+                    // Do nothing
+                    break;
+                case 2:
+                    EditorPrefs.SetString(SKIPPED_VERSION_KEY, newVersion.ToString());
+                    break;
+            }
         }
     }
 }
