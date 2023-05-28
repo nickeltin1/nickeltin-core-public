@@ -85,8 +85,10 @@ namespace nickeltin.Core.Editor
                 {
                     var packageData = new PackageData();
                     var packageJson = Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
+                    Debug.Log(packageJson);
                     JsonUtility.FromJsonOverwrite(packageJson, packageData);
                     var newVersion = Version.Parse(packageData.version);
+                    Debug.Log(newVersion);
                     if (newVersion > currentVersion)
                     {
                         Debug.Log("New core version avaliable: " + newVersion);
