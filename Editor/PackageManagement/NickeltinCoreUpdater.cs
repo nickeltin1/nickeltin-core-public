@@ -48,6 +48,8 @@ namespace nickeltin.Core.Editor
         {
             if (!_listRequest.IsCompleted) return;
             
+            EditorApplication.update -= CheckPackageFetchRequest;
+            
             if (_listRequest.Status == StatusCode.Success)
             {
                 _packageInfo = _listRequest.Result.FirstOrDefault(p => p.name == NickeltinCoreDefines.Name);
@@ -58,15 +60,15 @@ namespace nickeltin.Core.Editor
             }
 
             _listRequest = null;
-            EditorApplication.update -= CheckPackageFetchRequest;
         }
 
         private static void SendVersionValidationRequest(PackageInfo packageInfo, bool forceShowUpdatePopup)
         {
             var currentVersion = new Version(packageInfo.version);
-            var packageGitPath = new Uri(packageInfo.packageId);
-            Debug.Log(packageGitPath.AbsolutePath);
-            var www = UnityWebRequest.Get(PACKAGE_JSON_URL(packageGitPath.AbsolutePath.Trim('/')));
+            Debug.Log(packageInfo.packageId);
+            // var packageGitPath = new Uri(packageInfo.packageId);
+            // Debug.Log(packageGitPath.AbsolutePath);
+            var www = UnityWebRequest.Get(PACKAGE_JSON_URL("nickeltin1/nickeltin-core-public"));
             var requestAsyncOperation = www.SendWebRequest();
             requestAsyncOperation.completed += operation =>
             {
