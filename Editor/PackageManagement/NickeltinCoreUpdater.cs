@@ -72,7 +72,7 @@ namespace nickeltin.Core.Editor
             {
                 var username = match.Groups[1].Value;
                 var repository = match.Groups[2].Value;
-                var repositoryPath = $"{username}/{repository}";
+                var repositoryPath = $"{repository}";
 
                 Debug.Log(repositoryPath);
             }
