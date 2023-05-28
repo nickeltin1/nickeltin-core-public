@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
@@ -65,9 +66,17 @@ namespace nickeltin.Core.Editor
         private static void SendVersionValidationRequest(PackageInfo packageInfo, bool forceShowUpdatePopup)
         {
             var currentVersion = new Version(packageInfo.version);
-            Debug.Log(packageInfo.packageId);
-            // var packageGitPath = new Uri(packageInfo.packageId);
-            // Debug.Log(packageGitPath.AbsolutePath);
+            var match = Regex.Match(packageInfo.packageId, @"@(.*?)/(.*?)(?:\.git(?:#|$)|$)");
+
+            if (match.Success && match.Groups.Count >= 3)
+            {
+                var username = match.Groups[1].Value;
+                var repository = match.Groups[2].Value;
+                var repositoryPath = $"{username}/{repository}";
+
+                Debug.Log(repositoryPath);
+            }
+            
             var www = UnityWebRequest.Get(PACKAGE_JSON_URL("nickeltin1/nickeltin-core-public"));
             var requestAsyncOperation = www.SendWebRequest();
             requestAsyncOperation.completed += operation =>
