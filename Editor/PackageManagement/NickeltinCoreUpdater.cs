@@ -92,6 +92,8 @@ namespace nickeltin.Core.Editor
                         TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceShowUpdatePopup);
                     }
                 }
+                
+                Debug.Log(www.result + " " + www.error);
 
                 www.Dispose();
             };
