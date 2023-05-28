@@ -89,6 +89,7 @@ namespace nickeltin.Core.Editor
                     var newVersion = Version.Parse(packageData.version);
                     if (newVersion > currentVersion)
                     {
+                        Debug.Log("New core version avaliable: " + newVersion);
                         TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceShowUpdatePopup);
                     }
                 }
