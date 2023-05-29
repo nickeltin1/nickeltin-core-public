@@ -32,13 +32,12 @@ namespace nickeltin.Core.Editor
 
         public static readonly string CoreEditorAssemblyDefinitionPath =
             CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(CoreEditorAssemblyName);
-    
-        public const string Name = "com.nickeltin.core";
+        
         
         public static bool IsReadonly { get; private set; }
 
         
-        private static FileSystemWatcher _coreAsmDefWatcher;
+        // private static FileSystemWatcher _coreAsmDefWatcher;
         private static Dictionary<Type, ModuleDefinition> _modules;
         
         [InitializeOnLoadMethod]
@@ -59,14 +58,14 @@ namespace nickeltin.Core.Editor
                 var instance = (ModuleImplementation)Activator.CreateInstance(implType);
                 if (!instance.DefinitionType.IsSubclassOf(typeof(ModuleDefinition)))
                 {
-                    Log($"{instance} linked with wrong definition type {instance.DefinitionType}. " +
+                    NickeltinCore.Log($"{instance} linked with wrong definition type {instance.DefinitionType}. " +
                                    $"Type should be inherited from {nameof(ModuleDefinition)}", LogType.Error);
                     continue;
                 }
                 
                 if (!impls.TryAdd(instance.DefinitionType, instance))
                 {
-                    Log($"Multiple {nameof(ModuleImplementation)} registered for the same " +
+                    NickeltinCore.Log($"Multiple {nameof(ModuleImplementation)} registered for the same " +
                                    $"{instance.DefinitionType} {nameof(ModuleDefinition)} type.", LogType.Error);
                 }
             }
@@ -83,7 +82,7 @@ namespace nickeltin.Core.Editor
                 }
                 else
                 {
-                    Log($"Multiple {nameof(ModuleDefinition)} has the same " +
+                    NickeltinCore.Log($"Multiple {nameof(ModuleDefinition)} has the same " +
                                    $"{nameof(ModuleDefinition.DEFINE_SYMBOL)} of \"{def.DEFINE_SYMBOL}\"", LogType.Error);
                 }
             }
@@ -100,7 +99,7 @@ namespace nickeltin.Core.Editor
         {
             foreach (var packageInfo in obj.removed)
             {
-                if (packageInfo.name == Name)
+                if (packageInfo.name == NickeltinCore.Name)
                 {
                     UpdateDefineSymbols(true);
                     return;
@@ -116,7 +115,7 @@ namespace nickeltin.Core.Editor
         {
             if (!TryGetDefineSymbols(out var defines, out var buildTargetGroup))
             {
-                Log($"Can't fetch build target group, current group: {buildTargetGroup}", LogType.Error);
+                NickeltinCore.Log($"Can't fetch build target group, current group: {buildTargetGroup}", LogType.Error);
                 return;
             }
 
@@ -159,15 +158,12 @@ namespace nickeltin.Core.Editor
 
             if (changed)
             {
-                Log("Defines changed, current:\n" + string.Join(",\n", defines));
+                NickeltinCore.Log("Defines changed, current:\n" + string.Join(",\n", defines));
                 SetDefineSymbols(buildTargetGroup, defines.ToArray());
             }
         }
 
-        internal static void Log(object msg, LogType logType = LogType.Log)
-        {
-            Debug.LogFormat(logType, LogOption.NoStacktrace, null, "<b>[{0}]</b> {1}", Name, msg);
-        }
+      
         
         private static bool TryGetDefineSymbols(out HashSet<string> defines, out NamedBuildTarget target)
         {

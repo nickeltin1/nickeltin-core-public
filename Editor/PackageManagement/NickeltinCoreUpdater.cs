@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using nickeltin.Core.Runtime;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
@@ -25,57 +26,93 @@ namespace nickeltin.Core.Editor
         }
 
 
-        private const string SKIPPED_VERSION_KEY = NickeltinCoreDefines.Name + ".SKIPPED_VERSION";
+        private const string SKIPPED_VERSION_KEY = NickeltinCore.Name + ".SKIPPED_VERSION";
         private const string PROD_BRANCH = "prod";
         private static string PACKAGE_JSON_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
         
-        private static AddRequest _addRequest;
-        private static ListRequest _listRequest;
+        private static PMRequest<AddRequest> _addRequest;
+        private static PMRequest<ListRequest> _packageFetchRequest;
+        
         private static PackageInfo _packageInfo;
 
 
         /// <summary>
-        /// TODO: Context menus to download update
         /// TODO: Progress bar to show update
         /// </summary>
         [InitializeOnLoadMethod]
         private static void Init()
         {
-            _listRequest = Client.List(true);
-            EditorApplication.update += CheckPackageFetchRequest;
+            CheckForUpdates(false);
         }
         
-        private static void CheckPackageFetchRequest()
+        private const string CHECK_FOR_UPDATES = MenuPathsUtility.baseMenu + "Check for " + NickeltinCore.Name + " updates";
+        
+        [MenuItem(CHECK_FOR_UPDATES)]
+        private static void CheckForUpdates_Context()
         {
-            if (!_listRequest.IsCompleted) return;
-            
-            EditorApplication.update -= CheckPackageFetchRequest;
-            
-            if (_listRequest.Status == StatusCode.Success)
-            {
-                _packageInfo = _listRequest.Result.FirstOrDefault(p => p.name == NickeltinCoreDefines.Name);
-                if (_packageInfo is { source: PackageSource.Git })
-                {
-                    SendVersionValidationRequest(_packageInfo, false);
-                }
-            }
-
-            _listRequest = null;
+            CheckForUpdates(true);
         }
 
-        private static void SendVersionValidationRequest(PackageInfo packageInfo, bool forceShowUpdatePopup)
+        private static void CheckForUpdates(bool forceCheck)
         {
+            if (_packageInfo != null)
+            {
+                TrySendVersionValidationRequest(_packageInfo, forceCheck);
+            }
+            else
+            {
+                if (_packageFetchRequest != null)
+                {
+                    _packageFetchRequest = Client.List(true);
+                    _packageFetchRequest.Completed += (request, status) =>
+                    {
+                        if (status == StatusCode.Success)
+                        {
+                            _packageInfo = request.Result.FirstOrDefault(p => p.name == NickeltinCore.Name);
+                            TrySendVersionValidationRequest(_packageInfo, forceCheck);
+                        }
+                        else if (forceCheck)
+                        {
+                            NickeltinCore.Log($"Can't fetch current {NickeltinCore.Name} pacakge. " +
+                                                     $"Error code: {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
+                        }
+
+
+                        _packageFetchRequest = null;
+                    };
+                }
+                else
+                {
+                    NickeltinCore.Log("Check for updates already queried");
+                }
+            }
+            
+        }
+
+        private static void TrySendVersionValidationRequest(PackageInfo packageInfo, bool forceCheck)
+        {
+            if (packageInfo.source != PackageSource.Git)
+            {
+                if (forceCheck)
+                {
+                    NickeltinCore.Log("Package installed not from git", LogType.Error);
+                }
+                return;
+            }
+            
             var currentVersion = new Version(packageInfo.version);
             var match = Regex.Match(packageInfo.packageId, @"@(.*?)/(.*?)(?:\.git(?:#|$)|$)");
 
-            if (match.Success && match.Groups.Count >= 3)
-            {
-                var username = match.Groups[1].Value;
-                var repository = match.Groups[2].Value;
-                var repositoryPath = $"{repository}";
-
-                Debug.Log(repositoryPath);
-            }
+            Debug.Log(packageInfo.packageId);
+            //TODO:
+            // if (match.Success && match.Groups.Count >= 3)
+            // {
+            //     var username = match.Groups[1].Value;
+            //     var repository = match.Groups[2].Value;
+            //     var repositoryPath = $"{repository}";
+            //
+            //     Debug.Log(repositoryPath);
+            // }
             
             var www = UnityWebRequest.Get(PACKAGE_JSON_URL("nickeltin1/nickeltin-core-public"));
             var requestAsyncOperation = www.SendWebRequest();
@@ -84,27 +121,33 @@ namespace nickeltin.Core.Editor
                 if (www.result == UnityWebRequest.Result.Success)
                 {
                     var packageData = new PackageData();
+                    // Removing first 3 bytes known as UTF-8 BOM. It causes problem for JsonUtility
                     var packageJson = Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
-                    Debug.Log(packageJson);
                     JsonUtility.FromJsonOverwrite(packageJson, packageData);
                     var newVersion = Version.Parse(packageData.version);
-                    Debug.Log(newVersion);
                     if (newVersion > currentVersion)
                     {
-                        Debug.Log("New core version avaliable: " + newVersion);
-                        TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceShowUpdatePopup);
+                        TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceCheck);
+                    }
+                    else if (forceCheck)
+                    {
+                        NickeltinCore.Log($"Current version: {currentVersion}, version on the remote: {newVersion}. " +
+                                          $"No newer version is available.");
                     }
                 }
+                else if (forceCheck)
+                {
+                    NickeltinCore.Log($"Can't fetch version from remote. Request result: {www.result}, error: {www.error}", LogType.Error);
+                }
                 
-                Debug.Log(www.result + " " + www.error);
 
                 www.Dispose();
             };
         }
 
-        private static void TryDisplayPackageUpdateDialog(PackageInfo packageInfo, Version currentVersion, Version newVersion, bool forceShowPopup)
+        private static void TryDisplayPackageUpdateDialog(PackageInfo packageInfo, Version currentVersion, Version newVersion, bool forceCheck)
         {
-            if (!forceShowPopup)
+            if (!forceCheck)
             {
                 var skippedVersionStr = EditorPrefs.GetString(SKIPPED_VERSION_KEY, "");
                 if (!string.IsNullOrEmpty(skippedVersionStr))
@@ -112,16 +155,15 @@ namespace nickeltin.Core.Editor
                     var skippedVersion = new Version(skippedVersionStr);
                     if (skippedVersion == newVersion)
                     {
-                        Debug.Log($"Not showing update dialog because version were skipped by user, dialog will be shown for next version avaliable.");
                         return;
                     }
                 }
             }
            
         
-            var result = EditorUtility.DisplayDialogComplex($"{NickeltinCoreDefines.Name} version {newVersion} available!", 
-                $"New version of {NickeltinCoreDefines.Name} is avaliable. Current version: {currentVersion}, new version: {newVersion}. " +
-                $"Package that uses {NickeltinCoreDefines.Name} might require the latest version to function properly.",
+            var result = EditorUtility.DisplayDialogComplex($"{NickeltinCore.Name} version {newVersion} available!", 
+                $"New version of {NickeltinCore.Name} is avaliable. Current version: {currentVersion}, new version: {newVersion}. " +
+                $"Package that uses {NickeltinCore.Name} might require the latest version to function properly.",
                 "Install", "No, thanks", $"Don't show this message for version {newVersion}");
 
 
