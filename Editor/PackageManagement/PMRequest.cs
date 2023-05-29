@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 
@@ -26,6 +27,16 @@ namespace nickeltin.Core.Editor
             Request = request;
             EditorApplication.update -= Update;
             EditorApplication.update += Update;
+        }
+
+        /// <summary>
+        /// This constructor will show progress label for request progress.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="progressBarLabel"></param>
+        public PMRequest(RequestType request, string progressBarLabel) : this(request)
+        {
+            throw new NotImplementedException();
         }
 
         private void Update()

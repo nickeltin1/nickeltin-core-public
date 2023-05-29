@@ -30,7 +30,7 @@ namespace nickeltin.Core.Editor
         private const string PROD_BRANCH = "prod";
         private static string PACKAGE_JSON_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
         
-        private static PMRequest<AddRequest> _addRequest;
+        // private static PMRequest<AddRequest> _addRequest;
         private static PMRequest<ListRequest> _packageFetchRequest;
         
         private static PackageInfo _packageInfo;
@@ -45,7 +45,7 @@ namespace nickeltin.Core.Editor
             CheckForUpdates(false);
         }
         
-        private const string CHECK_FOR_UPDATES = MenuPathsUtility.baseMenu + "Check for " + NickeltinCore.Name + " updates";
+        private const string CHECK_FOR_UPDATES = MenuPathsUtility.baseMenu + "Check for nickletin-core updates";
         
         [MenuItem(CHECK_FOR_UPDATES)]
         private static void CheckForUpdates_Context()
@@ -65,8 +65,7 @@ namespace nickeltin.Core.Editor
             }
             else
             {
-                
-                if (_packageFetchRequest != null)
+                if (_packageFetchRequest == null)
                 {
                     if (forceCheck)
                     {
