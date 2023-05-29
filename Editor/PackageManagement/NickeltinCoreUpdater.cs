@@ -57,28 +57,45 @@ namespace nickeltin.Core.Editor
         {
             if (_packageInfo != null)
             {
+                if (forceCheck)
+                {
+                    NickeltinCore.Log("Package info already fetched, checking for updates.");
+                }
                 TrySendVersionValidationRequest(_packageInfo, forceCheck);
             }
             else
             {
+                
                 if (_packageFetchRequest != null)
                 {
-                    _packageFetchRequest = Client.List(true);
+                    if (forceCheck)
+                    {
+                        NickeltinCore.Log("Fetching local package info");
+                    }
+                    
+                    _packageFetchRequest = new PMRequest<ListRequest>(Client.List(true));
                     _packageFetchRequest.Completed += (request, status) =>
                     {
+                        _packageFetchRequest = null;
                         if (status == StatusCode.Success)
                         {
                             _packageInfo = request.Result.FirstOrDefault(p => p.name == NickeltinCore.Name);
-                            TrySendVersionValidationRequest(_packageInfo, forceCheck);
+                            if (_packageInfo != null)
+                            {
+                                if (forceCheck)
+                                {
+                                    NickeltinCore.Log("Local package info fetched");
+                                }
+                                
+                                TrySendVersionValidationRequest(_packageInfo, forceCheck);
+                            }
                         }
-                        else if (forceCheck)
+                        
+                        if (forceCheck && _packageInfo == null)
                         {
                             NickeltinCore.Log($"Can't fetch current {NickeltinCore.Name} pacakge. " +
                                                      $"Error code: {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
                         }
-
-
-                        _packageFetchRequest = null;
                     };
                 }
                 else

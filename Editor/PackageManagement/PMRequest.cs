@@ -24,6 +24,7 @@ namespace nickeltin.Core.Editor
         public PMRequest(RequestType request)
         {
             Request = request;
+            EditorApplication.update -= Update;
             EditorApplication.update += Update;
         }
 
@@ -34,6 +35,11 @@ namespace nickeltin.Core.Editor
             EditorApplication.update -= Update;
             
             Completed?.Invoke(Request, Request.Status);
+        }
+
+        ~PMRequest()
+        {
+            EditorApplication.update -= Update;
         }
 
         public static implicit operator PMRequest<RequestType>(RequestType request)
