@@ -117,9 +117,11 @@ namespace nickeltin.Core.Editor
             }
             
             var currentVersion = new Version(packageInfo.version);
-            var match = Regex.Match(packageInfo.packageId, @"@(.*?)/(.*?)(?:\.git(?:#|$)|$)");
+            var match = Regex.Match(packageInfo.packageId, @"\/([^\/]+\/[^\/]+?)(?:\.git)?(?:#.*)?$");
 
             Debug.Log(packageInfo.packageId);
+            Debug.Log(match.Groups[1].Value);
+            
             //TODO:
             // if (match.Success && match.Groups.Count >= 3)
             // {
