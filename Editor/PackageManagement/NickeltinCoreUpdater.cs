@@ -18,11 +18,6 @@ namespace nickeltin.Core.Editor
         private class PackageData
         {
             public string version = "0.0.0";
-
-            public override string ToString()
-            {
-                return $"PackageData (version: {version})";
-            }
         }
 
 
@@ -32,9 +27,7 @@ namespace nickeltin.Core.Editor
         
         private static PMRequest<AddRequest> _addRequest;
         private static PMRequest<ListRequest> _packageFetchRequest;
-        
-        private static PackageInfo _packageInfo;
-        
+
         private static readonly Regex _repoGitLocalAddressRegex = new Regex(@"\/([^\/]+\/[^\/]+?)(?:\.git)?(?:#.*)?$");
 
         [InitializeOnLoadMethod]
@@ -53,56 +46,43 @@ namespace nickeltin.Core.Editor
 
         private static void CheckForUpdates(bool forceCheck)
         {
-            if (_packageInfo != null)
+            if (_packageFetchRequest == null)
             {
                 if (forceCheck)
                 {
-                    NickeltinCore.Log("Package info already fetched, checking for updates.");
+                    NickeltinCore.Log("Fetching local package info");
                 }
                 
-                TrySendVersionValidationRequest(_packageInfo, forceCheck);
+                _packageFetchRequest = new PMRequest<ListRequest>(Client.List(true));
+                _packageFetchRequest.Completed += (request, status) =>
+                {
+                    _packageFetchRequest = null;
+                    PackageInfo packageInfo = null;
+                    if (status == StatusCode.Success)
+                    {
+                        packageInfo = request.Result.FirstOrDefault(p => p.name == NickeltinCore.Name);
+                        if (packageInfo != null)
+                        {
+                            if (forceCheck)
+                            {
+                                NickeltinCore.Log("Local package info fetched");
+                            }
+                            
+                            TrySendVersionValidationRequest(packageInfo, forceCheck);
+                        }
+                    }
+                    
+                    if (forceCheck && packageInfo == null)
+                    {
+                        NickeltinCore.Log($"Can't fetch current {NickeltinCore.Name} pacakge. " +
+                                                 $"Error code: {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
+                    }
+                };
             }
             else
             {
-                if (_packageFetchRequest == null)
-                {
-                    if (forceCheck)
-                    {
-                        NickeltinCore.Log("Fetching local package info");
-                    }
-                    
-                    _packageFetchRequest = new PMRequest<ListRequest>(Client.List(true));
-                    _packageFetchRequest.AddProgress(new Progress("Fetching local package info", "", UnityEditor.Progress.Options.Indefinite));
-                    _packageFetchRequest.Completed += (request, status) =>
-                    {
-                        _packageFetchRequest = null;
-                        if (status == StatusCode.Success)
-                        {
-                            _packageInfo = request.Result.FirstOrDefault(p => p.name == NickeltinCore.Name);
-                            if (_packageInfo != null)
-                            {
-                                if (forceCheck)
-                                {
-                                    NickeltinCore.Log("Local package info fetched");
-                                }
-                                
-                                TrySendVersionValidationRequest(_packageInfo, forceCheck);
-                            }
-                        }
-                        
-                        if (forceCheck && _packageInfo == null)
-                        {
-                            NickeltinCore.Log($"Can't fetch current {NickeltinCore.Name} pacakge. " +
-                                                     $"Error code: {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
-                        }
-                    };
-                }
-                else
-                {
-                    NickeltinCore.Log("Check for updates already queried");
-                }
+                NickeltinCore.Log("Check for updates already queried");
             }
-            
         }
         
         private static void TrySendVersionValidationRequest(PackageInfo packageInfo, bool forceCheck)
@@ -120,10 +100,8 @@ namespace nickeltin.Core.Editor
             var gitLocalAddress = _repoGitLocalAddressRegex.Match(packageInfo.packageId);
             var www = UnityWebRequest.Get(PACKAGE_JSON_URL(gitLocalAddress.Groups[1].Value));
             var requestAsyncOperation = www.SendWebRequest();
-            var webRequestProgress = new Progress($"Fetching {NickeltinCore.Name} version from remote", "", UnityEditor.Progress.Options.Indefinite);
             requestAsyncOperation.completed += operation =>
             {
-                webRequestProgress.Finish(Progress.ConvertStatusCode(www.result));
                 if (www.result == UnityWebRequest.Result.Success)
                 {
                     var packageData = new PackageData();
@@ -186,7 +164,6 @@ namespace nickeltin.Core.Editor
                     NickeltinCore.Log($"Installing update {newVersion}");
                     
                     _addRequest = new PMRequest<AddRequest>(Client.Add(packageInfo.packageId));
-                    _addRequest.AddProgress(new Progress($"Installing {NickeltinCore.Name} {newVersion}", "", UnityEditor.Progress.Options.Indefinite));
                     _addRequest.Completed += (request, status) =>
                     {
                         _addRequest = null;

@@ -8,6 +8,7 @@ using UProgress = UnityEditor.Progress;
 namespace nickeltin.Core.Editor
 {
     /// <summary>
+    /// TODO:
     /// Class binded with <see cref="UnityEditor.Progress"/>
     /// </summary>
     internal sealed class Progress
