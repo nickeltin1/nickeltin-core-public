@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 
@@ -13,6 +12,8 @@ namespace nickeltin.Core.Editor
     internal sealed class PMRequest<RequestType> where RequestType : Request
     {
         public delegate void RequestCompletedHandler(RequestType request, StatusCode status);
+
+        private Progress _progress;
     
         public readonly RequestType Request;
 
@@ -29,14 +30,9 @@ namespace nickeltin.Core.Editor
             EditorApplication.update += Update;
         }
 
-        /// <summary>
-        /// This constructor will show progress label for request progress.
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="progressBarLabel"></param>
-        public PMRequest(RequestType request, string progressBarLabel) : this(request)
+        public void AddProgress(Progress progress)
         {
-            throw new NotImplementedException();
+            _progress = progress;
         }
 
         private void Update()
@@ -44,7 +40,8 @@ namespace nickeltin.Core.Editor
             if (!IsCompleted) return;
             
             EditorApplication.update -= Update;
-            
+
+            _progress?.Finish(Progress.ConvertStatusCode(Request.Status));
             Completed?.Invoke(Request, Request.Status);
         }
 

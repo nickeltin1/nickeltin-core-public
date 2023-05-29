@@ -30,15 +30,13 @@ namespace nickeltin.Core.Editor
         private const string PROD_BRANCH = "prod";
         private static string PACKAGE_JSON_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
         
-        // private static PMRequest<AddRequest> _addRequest;
+        private static PMRequest<AddRequest> _addRequest;
         private static PMRequest<ListRequest> _packageFetchRequest;
         
         private static PackageInfo _packageInfo;
+        
+        private static readonly Regex _repoGitLocalAddressRegex = new Regex(@"\/([^\/]+\/[^\/]+?)(?:\.git)?(?:#.*)?$");
 
-
-        /// <summary>
-        /// TODO: Progress bar to show update
-        /// </summary>
         [InitializeOnLoadMethod]
         private static void Init()
         {
@@ -61,6 +59,7 @@ namespace nickeltin.Core.Editor
                 {
                     NickeltinCore.Log("Package info already fetched, checking for updates.");
                 }
+                
                 TrySendVersionValidationRequest(_packageInfo, forceCheck);
             }
             else
@@ -73,6 +72,7 @@ namespace nickeltin.Core.Editor
                     }
                     
                     _packageFetchRequest = new PMRequest<ListRequest>(Client.List(true));
+                    _packageFetchRequest.AddProgress(new Progress("Fetching local package info", "", UnityEditor.Progress.Options.Indefinite));
                     _packageFetchRequest.Completed += (request, status) =>
                     {
                         _packageFetchRequest = null;
@@ -104,7 +104,7 @@ namespace nickeltin.Core.Editor
             }
             
         }
-
+        
         private static void TrySendVersionValidationRequest(PackageInfo packageInfo, bool forceCheck)
         {
             if (packageInfo.source != PackageSource.Git)
@@ -117,25 +117,13 @@ namespace nickeltin.Core.Editor
             }
             
             var currentVersion = new Version(packageInfo.version);
-            var match = Regex.Match(packageInfo.packageId, @"\/([^\/]+\/[^\/]+?)(?:\.git)?(?:#.*)?$");
-
-            Debug.Log(packageInfo.packageId);
-            Debug.Log(match.Groups[1].Value);
-            
-            //TODO:
-            // if (match.Success && match.Groups.Count >= 3)
-            // {
-            //     var username = match.Groups[1].Value;
-            //     var repository = match.Groups[2].Value;
-            //     var repositoryPath = $"{repository}";
-            //
-            //     Debug.Log(repositoryPath);
-            // }
-            
-            var www = UnityWebRequest.Get(PACKAGE_JSON_URL("nickeltin1/nickeltin-core-public"));
+            var gitLocalAddress = _repoGitLocalAddressRegex.Match(packageInfo.packageId);
+            var www = UnityWebRequest.Get(PACKAGE_JSON_URL(gitLocalAddress.Groups[1].Value));
             var requestAsyncOperation = www.SendWebRequest();
+            var webRequestProgress = new Progress($"Fetching {NickeltinCore.Name} version from remote", "", UnityEditor.Progress.Options.Indefinite);
             requestAsyncOperation.completed += operation =>
             {
+                webRequestProgress.Finish(Progress.ConvertStatusCode(www.result));
                 if (www.result == UnityWebRequest.Result.Success)
                 {
                     var packageData = new PackageData();
@@ -189,7 +177,28 @@ namespace nickeltin.Core.Editor
             {
                 case 0:
                     EditorPrefs.DeleteKey(SKIPPED_VERSION_KEY);
-                    Client.Add(packageInfo.packageId);
+                    if (_addRequest != null)
+                    {
+                        NickeltinCore.Log("Package update is installing");
+                        break;
+                    }
+                    
+                    NickeltinCore.Log($"Installing update {newVersion}");
+                    
+                    _addRequest = new PMRequest<AddRequest>(Client.Add(packageInfo.packageId));
+                    _addRequest.AddProgress(new Progress($"Installing {NickeltinCore.Name} {newVersion}", "", UnityEditor.Progress.Options.Indefinite));
+                    _addRequest.Completed += (request, status) =>
+                    {
+                        _addRequest = null;
+                        if (status == StatusCode.Success)
+                        {
+                            NickeltinCore.Log($"Package updated successfully to version {newVersion}");
+                        }
+                        else
+                        {
+                            NickeltinCore.Log($"Package update failure. Error code {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
+                        }
+                    };
                     break;
                 case 1:
                     // Do nothing
