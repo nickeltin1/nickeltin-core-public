@@ -4,7 +4,7 @@ on:
     branches:
       - prod
 jobs:
-  npm_publish:
+  private_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-private-publish.yml@main'
-  npm_public_publish:
+  public_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-public-publish.yml@main'
