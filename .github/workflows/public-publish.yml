@@ -1,0 +1,8 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - prod
+jobs:
+  publish:
+    uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-public-publish.yml@main'
