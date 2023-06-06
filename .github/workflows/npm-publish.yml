@@ -6,3 +6,5 @@ on:
 jobs:
   npm_publish:
     uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-private-publish.yml@main'
+  npm_public_publish:
+    uses: 'nickeltin1/reusable-workflows/.github/workflows/nickeltin-public-publish.yml@main'
