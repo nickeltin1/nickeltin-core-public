@@ -1,6 +1,6 @@
 ﻿using UnityEditor;
 
-namespace nickeltin.Core.Editor.AssetsCaching
+namespace nickeltin.Core.Editor
 {
     internal class AssetsCreateCacher : AssetPostprocessor
     {

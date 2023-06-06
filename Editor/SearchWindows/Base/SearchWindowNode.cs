@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,23 +9,23 @@ namespace nickeltin.Core.Editor
 {
     internal class SearchWindowNode
     {
-        public int depth
+        public int Depth
         {
             get
             {
-                return parent != null ? parent.depth + 1 : 0;
+                return Parent != null ? Parent.Depth + 1 : 0;
             }
         }
 
-        public string name { get; private set; }
+        public string Name { get; private set; }
 
-        public string displayName { get; set; }
-        public bool isEndNode { get; private set; }
-        public ISearchWindowEntry data { get; private set; }
+        public string DisplayName { get; set; }
+        public bool IsEndNode { get; private set; }
+        public ISearchWindowEntry Data { get; private set; }
             
-        public SearchWindowNode parent { get; private set; }
+        public SearchWindowNode Parent { get; private set; }
 
-        public int directChildCount => _nestedNodes.Count;
+        public int DirectChildCount => _nestedNodes.Count;
             
         private readonly Dictionary<string, SearchWindowNode> _nestedNodes;
         
@@ -32,10 +33,10 @@ namespace nickeltin.Core.Editor
         private SearchWindowNode(string displayName, string name, bool isEndNode, ISearchWindowEntry data)
         {
             _nestedNodes = DictionaryPool<string, SearchWindowNode>.Get();
-            this.displayName = displayName;
-            this.name = name;
-            this.isEndNode = isEndNode;
-            this.data = data;
+            this.DisplayName = displayName;
+            this.Name = name;
+            this.IsEndNode = isEndNode;
+            this.Data = data;
         }
 
         ~SearchWindowNode()
@@ -62,19 +63,19 @@ namespace nickeltin.Core.Editor
             
         public void Add(SearchWindowNode node)
         {
-            if (isEndNode)
+            if (IsEndNode)
             {
                 Debug.LogError("End node can't have children's");
                 return;
             }
             
-            node.parent = this;
-            _nestedNodes.Add(node.name, node);
+            node.Parent = this;
+            _nestedNodes.Add(node.Name, node);
         }
 
         public void Remove(SearchWindowNode node)
         {
-            _nestedNodes.Remove(node.name);
+            _nestedNodes.Remove(node.Name);
         }
 
         public SearchWindowNode Get(string nodeName) => _nestedNodes[nodeName];
@@ -87,7 +88,7 @@ namespace nickeltin.Core.Editor
         /// <returns></returns>
         public IEnumerable<SearchWindowNode> Traverse()
         {
-            return _nestedNodes.Values.SelectMany<SearchWindowNode, SearchWindowNode>(node => node.TraverseWithSelf());
+            return _nestedNodes.Values.SelectMany(node => node.TraverseWithSelf());
         }
 
         private IEnumerable<SearchWindowNode> TraverseWithSelf()

@@ -73,14 +73,14 @@ namespace nickeltin.Core.Editor
         {
             foreach (var node in rootNode.Traverse().Reverse())
             {
-                if (node.directChildCount == 1 && !node.isEndNode && node.parent != null)
+                if (node.DirectChildCount == 1 && !node.IsEndNode && node.Parent != null)
                 {
                     var child = node.GetDirectChilds().First();
-                    child.displayName = node.displayName + "." + child.displayName;
-                    if (!node.parent.Contains(child.name))
+                    child.DisplayName = node.DisplayName + "." + child.DisplayName;
+                    if (!node.Parent.Contains(child.Name))
                     {
-                        node.parent.Remove(node);
-                        node.parent.Add(child);
+                        node.Parent.Remove(node);
+                        node.Parent.Add(child);
                     }
                 }
             }
@@ -100,21 +100,21 @@ namespace nickeltin.Core.Editor
             var typesCount = 0;
             foreach (var node in rootNode.Traverse())
             {
-                if (node.isEndNode)
+                if (node.IsEndNode)
                 {
-                    var icon = _customIconGetter != null ? _customIconGetter(node.data) : GetIconForEntry(node.data);
-                    var content = new GUIContent(node.displayName, icon);
+                    var icon = _customIconGetter != null ? _customIconGetter(node.Data) : GetIconForEntry(node.Data);
+                    var content = new GUIContent(node.DisplayName, icon);
                     var entry = new SearchTreeEntry(content)
                     {
-                        level = node.depth,
-                        userData = node.data
+                        level = node.Depth,
+                        userData = node.Data
                     };
                     tree.Add(entry);
                 }
                 else
                 {
-                    var content = new GUIContent(node.displayName);
-                    var entry = new SearchTreeGroupEntry(content, node.depth);
+                    var content = new GUIContent(node.DisplayName);
+                    var entry = new SearchTreeGroupEntry(content, node.Depth);
                     tree.Add(entry);
                 }
 

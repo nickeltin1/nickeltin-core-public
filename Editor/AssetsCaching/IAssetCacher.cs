@@ -1,7 +1,7 @@
 ﻿using System;
 using Object = UnityEngine.Object;
 
-namespace nickeltin.Core.Editor.AssetsCaching
+namespace nickeltin.Core.Editor
 {
     /// <summary>
     /// Inherit from this interface to recive callbacks when asset with specified type is created or deleted.

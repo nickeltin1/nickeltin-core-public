@@ -35,8 +35,8 @@ namespace nickeltin.Core.Editor
 
         private static void HierarchyWindowItemOnGUI(int instanceid, Rect selectionrect)
         {
-            var obj = EditorUtility.InstanceIDToObject(instanceid);
-            if (obj is not GameObject gameObject) return;
+            var gameObject = EditorUtility.InstanceIDToObject(instanceid) as GameObject;
+            if (gameObject == null) return;
             
             foreach (var drawer in _drawers)
             {
@@ -46,7 +46,7 @@ namespace nickeltin.Core.Editor
                     
                 if (component == null) continue;
                     
-                var isPrefab = PrefabUtility.IsPartOfAnyPrefab(obj);
+                var isPrefab = PrefabUtility.IsPartOfAnyPrefab(gameObject);
                 if (isPrefab)
                 {
                     selectionrect.x += selectionrect.width - ICON_SIZE;

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 
-namespace nickeltin.Core.Editor.AssetsCaching
+using AMP = UnityEditor.AssetModificationProcessor;
+
+namespace nickeltin.Core.Editor
 {
-    public sealed class AssetsCacher : AssetModificationProcessor
+    public sealed class AssetsCacher : AMP
     {
         private static Dictionary<Type, List<IAssetCacher>> _cachers;
         
