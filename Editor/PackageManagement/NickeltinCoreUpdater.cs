@@ -187,8 +187,11 @@ namespace nickeltin.Core.Editor
                     }
                     
                     NickeltinCore.Log($"Installing update {newVersion}");
-                    
-                    _addRequest = new PMRequest<AddRequest>(Client.Add(packageInfo.packageId));
+
+                    var packageID = packageInfo.source == PackageSource.Registry
+                        ? $"{packageInfo.name}@{newVersion}" 
+                        : packageInfo.packageId;
+                    _addRequest = new PMRequest<AddRequest>(Client.Add(packageID));
                     _addRequest.Completed += (request, status) =>
                     {
                         _addRequest = null;
