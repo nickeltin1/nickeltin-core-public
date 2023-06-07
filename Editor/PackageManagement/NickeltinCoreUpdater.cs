@@ -20,16 +20,6 @@ namespace nickeltin.Core.Editor
             public string version = "0.0.0";
         }
 
-
-        private abstract class PackageRemote
-        {
-            public abstract PackageSource Source { get; }
-
-            public abstract string GetURL();
-
-            public abstract Version GetLatestVersion(UnityWebRequest request);
-        }
-
         private const string SKIPPED_VERSION_KEY = NickeltinCore.Name + ".SKIPPED_VERSION";
         private const string PROD_BRANCH = "prod";
         
@@ -40,8 +30,7 @@ namespace nickeltin.Core.Editor
 
         private static string PACKAGE_REGISTRY_URL(PackageInfo packageInfo)
         {
-            return "https://registry.npmjs.org/com.nickeltin.core/latest";
-            // return $"{packageInfo.registry.url}/{packageInfo.name}/latest";
+            return $"{packageInfo.registry.url}/{packageInfo.name}/latest";
         }
 
         private static PMRequest<AddRequest> _addRequest;
@@ -61,77 +50,6 @@ namespace nickeltin.Core.Editor
         private static void CheckForUpdates_Context()
         {
             CheckForUpdates(true);
-        }
-
-        [MenuItem(MenuPathsUtility.baseMenu + "Check for nickletin-core updates [Registry]")]
-        private static void CheckForUpdatesRegistry_Context()
-        {
-            const bool forceCheck = true;
-            if (_packageFetchRequest == null)
-            {
-                NickeltinCore.Log("Fetching local package info");
-
-                _packageFetchRequest = new PMRequest<ListRequest>(Client.List(true));
-                _packageFetchRequest.Completed += (request, status) =>
-                {
-                    _packageFetchRequest = null;
-                    PackageInfo packageInfo = null;
-                    if (status == StatusCode.Success)
-                    {
-                        packageInfo = request.Result.FirstOrDefault(p => p.name == NickeltinCore.Name);
-                        if (packageInfo != null)
-                        {
-                            NickeltinCore.Log("Local package info fetched");
-
-                            Debug.Log(packageInfo.packageId);
-                            var currentVersion = new Version(packageInfo.version);
-                            var www = UnityWebRequest.Get(PACKAGE_REGISTRY_URL(packageInfo));
-                            var requestAsyncOperation = www.SendWebRequest();
-                            requestAsyncOperation.completed += operation =>
-                            {
-                                if (www.result == UnityWebRequest.Result.Success)
-                                {
-                                    Debug.Log(www.downloadHandler.text);
-                    
-                                    var packageData = new PackageData();
-                                    // Removing first 3 bytes known as UTF-8 BOM. It causes problem for JsonUtility
-                                    var packageJson = www.downloadHandler.text;//Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
-                                    JsonUtility.FromJsonOverwrite(packageJson, packageData);
-                                    var newVersion = Version.Parse(packageData.version);
-                                    
-                                    Debug.Log(newVersion);
-                                    // if (newVersion > currentVersion)
-                                    // {
-                                    //     TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceCheck);
-                                    // }
-                                    // else
-                                    // {
-                                    //     NickeltinCore.Log($"Current version: {currentVersion}, version on the remote: {newVersion}. " +
-                                    //                       $"No newer version is available.");
-                                    // }
-                                }
-                                else
-                                {
-                                    NickeltinCore.Log($"Can't fetch version from remote. Request result: {www.result}, error: {www.error}", LogType.Error);
-                                }
-
-
-                                www.Dispose();
-                            };
-                        }
-                    }
-                    
-                    if (packageInfo == null)
-                    {
-                        NickeltinCore.Log($"Can't fetch current {NickeltinCore.Name} pacakge. " +
-                                          $"Error code: {request.Error.errorCode}, message: {request.Error.message}", LogType.Error);
-                    }
-                };
-            }
-            else
-            {
-                NickeltinCore.Log("Check for updates already queried");
-            }
         }
 
         private static void CheckForUpdates(bool forceCheck)
@@ -209,9 +127,6 @@ namespace nickeltin.Core.Editor
             {
                 if (www.result == UnityWebRequest.Result.Success)
                 {
-                    Debug.Log(www.downloadHandler.text);
-                    
-                    Debug.Log(packageInfo.packageId);
                     var packageData = new PackageData();
                     var packageJson = packageInfo.source == PackageSource.Git
                         // Removing first 3 bytes known as UTF-8 BOM. It causes problem for JsonUtility. Case only for git.
