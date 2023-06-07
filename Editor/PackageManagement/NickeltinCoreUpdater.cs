@@ -21,10 +21,23 @@ namespace nickeltin.Core.Editor
         }
 
 
+        private abstract class PackageRemote
+        {
+            public abstract PackageSource Source { get; }
+
+            public abstract string GetURL();
+
+            public abstract Version GetLatestVersion(UnityWebRequest request);
+        }
+
         private const string SKIPPED_VERSION_KEY = NickeltinCore.Name + ".SKIPPED_VERSION";
         private const string PROD_BRANCH = "prod";
-        private static string PACKAGE_JSON_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
-        
+        private static string PACKAGE_JSON_GITHUB_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
+        private static string PACKAGE_REGISTRY_URL(PackageInfo packageInfo)
+        {
+            return "https://registry.npmjs.org/com.nickeltin.core/package.json";
+        }
+
         private static PMRequest<AddRequest> _addRequest;
         private static PMRequest<ListRequest> _packageFetchRequest;
 
@@ -87,23 +100,40 @@ namespace nickeltin.Core.Editor
         
         private static void TrySendVersionValidationRequest(PackageInfo packageInfo, bool forceCheck)
         {
-            if (packageInfo.source != PackageSource.Git)
+            switch (packageInfo.source)
             {
-                if (forceCheck)
-                {
-                    NickeltinCore.Log("Package installed not from git", LogType.Error);
-                }
-                return;
+                case PackageSource.Unknown:
+                    if (forceCheck)
+                    {
+                        NickeltinCore.Log("Local package info unknown", LogType.Error);
+                    }
+                    return;
+                case PackageSource.Registry:
+                case PackageSource.Git:
+                    // All good
+                    break;
+                default:
+                    if (forceCheck)
+                    {
+                        NickeltinCore.Log("Package installed not from git or registry", LogType.Error);
+                    }
+                    return;
             }
             
+            
             var currentVersion = new Version(packageInfo.version);
-            var gitLocalAddress = _repoGitLocalAddressRegex.Match(packageInfo.packageId);
-            var www = UnityWebRequest.Get(PACKAGE_JSON_URL(gitLocalAddress.Groups[1].Value));
+            var url = packageInfo.source == PackageSource.Git
+                ? PACKAGE_JSON_GITHUB_URL(_repoGitLocalAddressRegex.Match(packageInfo.packageId).Groups[1].Value)
+                : PACKAGE_REGISTRY_URL(packageInfo);
+                
+            var www = UnityWebRequest.Get(url);
             var requestAsyncOperation = www.SendWebRequest();
             requestAsyncOperation.completed += operation =>
             {
                 if (www.result == UnityWebRequest.Result.Success)
                 {
+                    Debug.Log(www.downloadHandler.text);
+                    
                     var packageData = new PackageData();
                     // Removing first 3 bytes known as UTF-8 BOM. It causes problem for JsonUtility
                     var packageJson = Encoding.UTF8.GetString(www.downloadHandler.data, 3, www.downloadHandler.data.Length - 3);
