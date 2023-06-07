@@ -1,7 +1,7 @@
 ﻿namespace nickeltin.Core.Editor
 {
     /// <summary>
-    /// TODO:
+    /// Used to register nickeltin modules. Upon recomplie module implementations will contribute to project defines.  
     /// </summary>
     public abstract class ModuleDefinition
     {
