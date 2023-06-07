@@ -32,10 +32,15 @@ namespace nickeltin.Core.Editor
 
         private const string SKIPPED_VERSION_KEY = NickeltinCore.Name + ".SKIPPED_VERSION";
         private const string PROD_BRANCH = "prod";
-        private static string PACKAGE_JSON_GITHUB_URL(string usernameAndRepoName) => $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
+        
+        private static string PACKAGE_JSON_GITHUB_URL(string usernameAndRepoName)
+        {
+            return $"https://raw.githubusercontent.com/{usernameAndRepoName}/{PROD_BRANCH}/package.json";
+        }
+
         private static string PACKAGE_REGISTRY_URL(PackageInfo packageInfo)
         {
-            return "https://registry.npmjs.org/com.nickeltin.core/package.json";
+            return $"{packageInfo.registry.url}/{packageInfo.name}/latest";
         }
 
         private static PMRequest<AddRequest> _addRequest;
@@ -100,6 +105,7 @@ namespace nickeltin.Core.Editor
         
         private static void TrySendVersionValidationRequest(PackageInfo packageInfo, bool forceCheck)
         {
+            var url = "";
             switch (packageInfo.source)
             {
                 case PackageSource.Unknown:
@@ -109,8 +115,11 @@ namespace nickeltin.Core.Editor
                     }
                     return;
                 case PackageSource.Registry:
+                    url = PACKAGE_REGISTRY_URL(packageInfo);
+                    break;
                 case PackageSource.Git:
-                    // All good
+                    url = PACKAGE_JSON_GITHUB_URL(
+                        _repoGitLocalAddressRegex.Match(packageInfo.packageId).Groups[1].Value);
                     break;
                 default:
                     if (forceCheck)
@@ -122,10 +131,6 @@ namespace nickeltin.Core.Editor
             
             
             var currentVersion = new Version(packageInfo.version);
-            var url = packageInfo.source == PackageSource.Git
-                ? PACKAGE_JSON_GITHUB_URL(_repoGitLocalAddressRegex.Match(packageInfo.packageId).Groups[1].Value)
-                : PACKAGE_REGISTRY_URL(packageInfo);
-                
             var www = UnityWebRequest.Get(url);
             var requestAsyncOperation = www.SendWebRequest();
             requestAsyncOperation.completed += operation =>
@@ -141,6 +146,7 @@ namespace nickeltin.Core.Editor
                     var newVersion = Version.Parse(packageData.version);
                     if (newVersion > currentVersion)
                     {
+                        Debug.Log(packageInfo.packageId);
                         TryDisplayPackageUpdateDialog(packageInfo, currentVersion, newVersion, forceCheck);
                     }
                     else if (forceCheck)
