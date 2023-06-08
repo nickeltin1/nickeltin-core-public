@@ -37,8 +37,8 @@ namespace nickeltin.Core.Editor
 
         private static void ContextualPropertyMenu(GenericMenu menu, SerializedProperty property)
         {
-            //TODO: 2022 upd
-            if (property.GetObjectType() == typeof(GUIDField))
+            property.GetFieldInfoAndElementStaticTypeFromProperty(out var type);
+            if (type == typeof(GUIDField))
             {
                 menu.AddItem(new GUIContent("Generate GUID"), false, prop =>
                 {
@@ -48,7 +48,7 @@ namespace nickeltin.Core.Editor
                 }, property);
                 menu.AddItem(new GUIContent("Print Hash"), false, prop =>
                 {
-                    var field = (GUIDField) property.GetObjectValue();
+                    var field = (GUIDField) property.GetValue();
                     Debug.Log($"Hash code for GUID: {field.Value} is: {field.GetHashCode()}");
                 }, property);
             }
@@ -132,11 +132,10 @@ namespace nickeltin.Core.Editor
             GUI.color = color;
 
             if (EditorGUI.EndChangeCheck())
-            { 
-                // Debug.Log("GUID Change!");
-                //TODO: when unity 2022 is working version SerializedProperty.boxedValue 
-                // var field = (GUIDField) property.GetObjectValue();
-                // field._hashCached = false;
+            {
+                // var guidField = (GUIDField)property.GetValue();
+                // guidField.DirtyHash();
+                // Debug.Log($"GUID: {guidField.Value} hash: {guidField.GetHashCode()} cached: {guidField._hashCached}");
             }
             EditorGUI.EndProperty();
         }

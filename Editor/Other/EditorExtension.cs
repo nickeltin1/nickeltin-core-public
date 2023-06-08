@@ -1,34 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
-using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace nickeltin.Core.Editor
 {
     public static class EditorExtension
     {
-        public static ScriptableObject CreateScriptableObjectInAsset(this Object parent, Type type,
-            HideFlags hideFlags = HideFlags.None)
-        {
-            var child = ScriptableObject.CreateInstance(type);
-            Undo.RegisterCreatedObjectUndo(child, $"{parent}: creating child");
-            child.name = type.Name;
-            AssetDatabase.AddObjectToAsset(child, parent);
-            return child;
-        }
-
-        [Obsolete]
-        public static IEnumerable<SerializedObject> GetAllInspectedObjects(this UnityEditor.Editor editor)
-        {
-            foreach (var editorTarget in editor.targets)
-            {
-                yield return new SerializedObject(editorTarget);
-            }
-        }
-
         public static void SearchInProjectWindow(string searchText)
         {
             EditorUtility.FocusProjectWindow();
@@ -60,11 +38,6 @@ namespace nickeltin.Core.Editor
         {
             var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             return fields.Any(field => EditorGUIUtility.systemCopyBuffer.Contains(field.Name));
-        }
-
-        public static Rect GetPropertyRect(float addHeight = 2)
-        {
-            return GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight + addHeight);
         }
     }
 }

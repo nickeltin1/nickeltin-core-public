@@ -27,7 +27,7 @@ namespace nickeltin.Core.Editor
         
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            var serializableType = (SerializableType)property.GetObjectValue();
+            var serializableType = (SerializableType)property.GetValue();
             var asm = serializableType.AssemblyString;
             var tp = serializableType.TypeString;
             var type = serializableType.Get();

@@ -17,8 +17,13 @@ namespace nickeltin.Core.Runtime
         [SerializeField] internal string _userDefinedId;
         [SerializeField] internal bool _usingUserDefinedId;
 
-        // internal bool _hashCached;
-        // private int _hash;
+        internal bool _hashCached;
+        private int _hash;
+
+        internal void DirtyHash()
+        {
+            _hashCached = false;
+        }
         
         public GUIDField(GUIDField field) : this()
         {
@@ -37,7 +42,7 @@ namespace nickeltin.Core.Runtime
         {
             _userDefinedId = value;
             _usingUserDefinedId = true;
-            // _hashCached = false;
+            _hashCached = false;
         }
         
 
@@ -51,13 +56,13 @@ namespace nickeltin.Core.Runtime
             if (string.IsNullOrEmpty(_userDefinedId))
             {
                 _userDefinedId = "NO_ID";
-                // _hashCached = false;
+                _hashCached = false;
             }
 
             if (string.IsNullOrEmpty(_guid))
             {
                 _guid = NewGUID();
-                // _hashCached = false;
+                _hashCached = false;
             }
         }
 
@@ -78,14 +83,13 @@ namespace nickeltin.Core.Runtime
         
         public override int GetHashCode()
         {
-            return StringToHash(Value);
-            // if (!_hashCached)
-            // {
-            //     _hashCached = true;
-            //     _hash = Value.GetHashCode();
-            // }
-            //
-            // return _hash;
+            if (!_hashCached)
+            {
+                _hashCached = true;
+                _hash = StringToHash(Value);
+            }
+            
+            return _hash;
         }
 
         public static int StringToHash(string guid)

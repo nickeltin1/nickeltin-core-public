@@ -27,32 +27,32 @@ namespace nickeltin.Core.Editor
         
             public delegate void DrawerFunc(Rect rect, GUIContent label);
 
-            public readonly SerializedProperty property;
-            public readonly bool disabled;
+            public readonly SerializedProperty Property;
+            public readonly bool Disabled;
 
-            private DrawerFunc drawer { get; }
+            private DrawerFunc Drawer { get; }
             
             public PropertyData(SerializedProperty property) : this(property, false) { }
 
             public PropertyData(SerializedProperty property, bool disabled) : this()
             {
-                this.property = property;
-                this.disabled = disabled;
-                this.drawer = DefaultDrawer;
+                this.Property = property;
+                this.Disabled = disabled;
+                this.Drawer = DefaultDrawer;
             }
             
             public PropertyData(SerializedProperty property, bool disabled, DrawerFunc customDrawer) : this(property, disabled)
             {
-                this.drawer = customDrawer;
+                this.Drawer = customDrawer;
             }
             
             
             public static implicit operator PropertyData (SerializedProperty source) => new PropertyData(source);
 
-            private void DefaultDrawer(Rect rect, GUIContent label) => EditorGUI.PropertyField(rect, property, label, true);
+            private void DefaultDrawer(Rect rect, GUIContent label) => EditorGUI.PropertyField(rect, Property, label, true);
             private static void ObsoleteDrawer(Rect rect, GUIContent label) => EditorGUI.LabelField(rect, label, OBSOLETE, EditorStyles.boldLabel);
 
-            public void Draw(Rect rect, GUIContent label) => drawer(rect, label);
+            public void Draw(Rect rect, GUIContent label) => Drawer(rect, label);
 
             public static PropertyData Obsolete => new PropertyData(null, true, ObsoleteDrawer);
         }
@@ -107,7 +107,7 @@ namespace nickeltin.Core.Editor
             {
                 if (propId == _referenceType.enumValueIndex)
                 {
-                    using (new EditorGUI.DisabledScope(propertyData.disabled))
+                    using (new EditorGUI.DisabledScope(propertyData.Disabled))
                     {
                         propertyData.Draw(position, label);
                     }
