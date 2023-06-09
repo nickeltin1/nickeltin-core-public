@@ -48,8 +48,8 @@ namespace nickeltin.Core.Editor
                 }, property);
                 menu.AddItem(new GUIContent("Print Hash"), false, prop =>
                 {
-                    var field = (GUIDField) property.GetValue();
-                    Debug.Log($"Hash code for GUID: {field.Value} is: {field.GetHashCode()}");
+                    var field = (GUIDField)property.GetValue();
+                    Debug.Log($"Hash code for GUID: {field.Value} is: {field.GetHashedGUID()}");
                 }, property);
             }
         }
@@ -133,9 +133,8 @@ namespace nickeltin.Core.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
-                // var guidField = (GUIDField)property.GetValue();
-                // guidField.DirtyHash();
-                // Debug.Log($"GUID: {guidField.Value} hash: {guidField.GetHashCode()} cached: {guidField._hashCached}");
+                var guidField = (GUIDField)property.GetValue();
+                guidField.DirtyHash();
             }
             EditorGUI.EndProperty();
         }

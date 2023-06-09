@@ -11,7 +11,7 @@ namespace nickeltin.Core.Runtime
     [DrawWithUnity, DisableContextMenu()]
 #endif
     [Serializable]
-    public struct GUIDField
+    public class GUIDField
     {
         [SerializeField] internal string _guid;
         [SerializeField] internal string _userDefinedId;
@@ -24,8 +24,15 @@ namespace nickeltin.Core.Runtime
         {
             _hashCached = false;
         }
-        
-        public GUIDField(GUIDField field) : this()
+
+        public GUIDField()
+        {
+            _guid = NewGUID();
+            _userDefinedId = "NO_ID";
+            _usingUserDefinedId = false;
+        }
+
+        public GUIDField(GUIDField field)
         {
             this._guid = field._guid;
             this._userDefinedId = field._userDefinedId;
@@ -44,7 +51,7 @@ namespace nickeltin.Core.Runtime
             _usingUserDefinedId = true;
             _hashCached = false;
         }
-        
+
 
         public override string ToString() => Value;
 
@@ -73,15 +80,9 @@ namespace nickeltin.Core.Runtime
         /// <summary>
         /// Generates new guid, therefore not determenistic for comparison
         /// </summary>
-        public static GUIDField Default =>
-            new GUIDField()
-            {
-                _guid = NewGUID(),
-                _userDefinedId = "NO_ID",
-                _usingUserDefinedId = false
-            };
-        
-        public override int GetHashCode()
+        public static GUIDField Default => new GUIDField();
+
+        public int GetHashedGUID()
         {
             if (!_hashCached)
             {
@@ -91,10 +92,7 @@ namespace nickeltin.Core.Runtime
             
             return _hash;
         }
-
-        public static int StringToHash(string guid)
-        {
-            return guid.GetHashCode();
-        }
+        
+        public static int StringToHash(string str) => str.GetHashCode();
     }
 }
