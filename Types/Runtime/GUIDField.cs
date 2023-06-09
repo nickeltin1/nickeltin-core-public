@@ -20,7 +20,7 @@ namespace nickeltin.Core.Runtime
         internal bool _hashCached;
         private int _hash;
 
-        internal void DirtyHash()
+        public void DirtyHash()
         {
             _hashCached = false;
         }

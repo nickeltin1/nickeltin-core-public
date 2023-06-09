@@ -22,13 +22,16 @@ namespace nickeltin.Core.Editor
             }
 
             if (currentProperty.NextVisible(true))
+            {
                 do
                 {
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
                         break;
 
                     yield return currentProperty;
-                } while (currentProperty.NextVisible(false));
+                }
+                while (currentProperty.NextVisible(false));
+            }
         }
         
 
@@ -147,68 +150,122 @@ namespace nickeltin.Core.Editor
         #endregion
 
         #region Property Value Access
-        
+
         /// <summary>
         /// Gets boxed value of property with support of Nested Types, Arrays, Lists, SerializedReference
-        /// For Unity 2022 used built-in efficient property 'boxedValue' 
         /// </summary>
-        /// <param name="property"></param>
+        /// <remarks>
+        /// If proprty has multiple values this will only return value of first object.
+        /// </remarks>
+        /// <param name="offset">Allows to get parent values of nested property, if 1 that will return direct parent of final value, 2 parent of that parent.</param>
         /// <returns></returns>
-        public static object GetValue(this SerializedProperty property)
+        // ReSharper disable once InvalidXmlDocComment
+        public static object GetValue(this SerializedProperty property, int offset = 0)
         {
-            object obj = property.serializedObject.targetObject;
-            var path = property.propertyPath.Replace(".Array.data", "");
-            var fieldStructure = path.Split('.');
-            for (var i = 0; i < fieldStructure.Length; i++)
+            var obj = new object[] { property.serializedObject.targetObject };
+            return property.GetValues(obj, offset, out _).First();
+        }
+        
+        /// <inheritdoc cref="GetValue"/>
+        /// <remarks>
+        /// Version of <see cref="GetValue"/> that supports multiediting.
+        /// </remarks>
+        public static object[] GetValues(this SerializedProperty property, int offset = 0)
+        {
+            return property.GetValues(property.GetTargetObjects(), offset, out _);
+        }
+
+        private static object[] GetTargetObjects(this SerializedProperty property)
+        {
+            return Array.ConvertAll(property.serializedObject.targetObjects, obj => (object)obj);
+        }
+        
+        private static object[] GetValues(this SerializedProperty property, object[] targetObjects, int offset, out string[] fieldStructure)
+        {
+            if (offset < 0)
             {
-                if (fieldStructure[i].Contains("["))
+                throw new Exception("Offset can't be lower then 0");
+            }
+            
+            var path = property.propertyPath.Replace(".Array.data", "");
+            fieldStructure = path.Split('.');
+            for (var i = 0; i < fieldStructure.Length - offset; i++)
+            {
+                for (var j = 0; j < targetObjects.Length; j++)
                 {
-                    var index = Convert.ToInt32(new string(fieldStructure[i].Where(char.IsDigit).ToArray()));
-                    obj = GetFieldValueWithIndex(RGX.Replace(fieldStructure[i], ""), obj, index);
-                }
-                else
-                {
-                    obj = GetFieldValue(fieldStructure[i], obj);
+                    var val = targetObjects.GetValue(j);
+                    if (fieldStructure[i].Contains("["))
+                    {
+                        var index = Convert.ToInt32(new string(fieldStructure[i].Where(char.IsDigit).ToArray()));
+                        val = GetFieldValueWithIndex(RGX.Replace(fieldStructure[i], ""), val, index);
+                    }
+                    else
+                    {
+                        val = GetFieldValue(fieldStructure[i], val);
+                    }
+                    targetObjects.SetValue(val, j);
                 }
             }
 
-            return obj;
+            return targetObjects;
         }
 
         /// <summary>
-        /// Sets boxed value of property with support of Nested Types, Arrays, Lists, SerializedReference
-        /// For Unity 2022 used built-in efficient property 'boxedValue' 
+        /// Sets boxed value of property with reflections, supports Nesting, Arrays, Lists, SerializedReference
         /// </summary>
-        /// <param name="property"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static bool SetValue(this SerializedProperty property, object value)
+        public static void SetValue(this SerializedProperty property, object value)
         {
-            object obj = property.serializedObject.targetObject;
-            var path = property.propertyPath.Replace(".Array.data", "");
-            var fieldStructure = path.Split('.');
-            for (var i = 0; i < fieldStructure.Length - 1; i++)
-            {
-                if (fieldStructure[i].Contains("["))
-                {
-                    var index = Convert.ToInt32(new string(fieldStructure[i].Where(char.IsDigit)
-                        .ToArray()));
-                    obj = GetFieldValueWithIndex(RGX.Replace(fieldStructure[i], ""), obj, index);
-                }
-                else
-                {
-                    obj = GetFieldValue(fieldStructure[i], obj);
-                }
-            }
+            var fieldOwners = property.GetValues(new object[] {property.serializedObject.targetObject}, 
+                1, out var fieldStructure);
+            SetValues(fieldOwners, fieldStructure.Last(), i => value);
+        }
 
-            var fieldName = fieldStructure.Last();
-            if (fieldName.Contains("["))
+        /// <inheritdoc cref="SetValue"/>
+        /// <remarks>
+        /// Supports multiediting, with single object value for all targets
+        /// </remarks>
+        public static void SetValues(this SerializedProperty property, object value)
+        {
+            var fieldOwners = property.GetValues(property.GetTargetObjects(), 1, out var fieldStructure);
+            SetValues(fieldOwners, fieldStructure.Last(), i => value);
+        }
+        
+        /// <inheritdoc cref="SetValue"/>
+        /// <remarks>
+        /// Supports multiediting, with specified object values
+        /// </remarks>
+        public static void SetValues(this SerializedProperty property, object[] values)
+        {
+            if (values.Length != property.serializedObject.targetObjects.Length)
             {
-                var index = Convert.ToInt32(new string(fieldName.Where(char.IsDigit).ToArray()));
-                return SetFieldValueWithIndex(RGX.Replace(fieldName, ""), obj, index, value);
+                throw new Exception($"Values array don't match, target length {property.serializedObject.targetObjects.Length}, provided length {values.Length}");
             }
+            
+            var fieldOwners = property.GetValues(property.GetTargetObjects(), 1, out var fieldStructure);
+            SetValues(fieldOwners, fieldStructure.Last(), i => values[i]);
+        }
 
-            return SetFieldValue(fieldName, obj, value);
+
+        /// <summary>
+        /// Private values setter, more flexible
+        /// </summary>
+        /// <param name="fieldOwners">Objects that holds field</param>
+        /// <param name="fieldName">Field to be setted</param>
+        /// <param name="valuesGetter">Object getter that takes index and returns object</param>
+        private static void SetValues(object[] fieldOwners, string fieldName, Func<int, object> valuesGetter)
+        {
+            for (var i = 0; i < fieldOwners.Length; i++)
+            {
+                var obj = fieldOwners.GetValue(i);
+                var val = valuesGetter(i);
+                if (fieldName.Contains("["))
+                {
+                    var index = Convert.ToInt32(new string(fieldName.Where(char.IsDigit).ToArray()));
+                    SetFieldValueWithIndex(RGX.Replace(fieldName, ""), obj, index, val);
+                }
+        
+                SetFieldValue(fieldName, obj, val);
+            }
         }
         
         private static readonly Regex RGX = new(@"\[\d+\]", RegexOptions.Compiled);
@@ -241,33 +298,29 @@ namespace nickeltin.Core.Editor
             return default;
         }
 
-        private static bool SetFieldValue(string fieldName, object obj, object value, BindingFlags bindings = DEFAULT_BINDING_FLAGS)
+        private static void SetFieldValue(string fieldName, object obj, object value, BindingFlags bindings = DEFAULT_BINDING_FLAGS)
         {
             var field = obj.GetType().GetField(fieldName, bindings);
-            if (field == null) return false;
-            field.SetValue(obj, value);
-            return true;
+            field!.SetValue(obj, value);
 
         }
 
-        private static bool SetFieldValueWithIndex(string fieldName, object obj, int index, object value, BindingFlags bindings = DEFAULT_BINDING_FLAGS)
+        private static void SetFieldValueWithIndex(string fieldName, object obj, int index, object value, BindingFlags bindings = DEFAULT_BINDING_FLAGS)
         {
             var field = obj.GetType().GetField(fieldName, bindings);
-            if (field == null) return false;
-            var list = field.GetValue(obj);
+            var list = field!.GetValue(obj);
             if (list.GetType().IsArray)
             {
                 ((object[])list)[index] = value;
-                return true;
             }
-
-            if (list is IList castedList)
+            else if (list is IList castedList)
             {
                 castedList[index] = value;
-                return true;
             }
-
-            return false;
+            else
+            {
+                throw new Exception($"Can't set field value for {fieldName} at index {index}");
+            }
         }
         
         #endregion

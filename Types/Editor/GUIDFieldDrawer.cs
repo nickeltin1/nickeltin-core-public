@@ -42,9 +42,11 @@ namespace nickeltin.Core.Editor
             {
                 menu.AddItem(new GUIContent("Generate GUID"), false, prop =>
                 {
-                    var guid = ((SerializedProperty)prop).FindPropertyRelative(nameof(GUIDField._guid));
+                    var property1 = (SerializedProperty)prop;
+                    var guid = property1.FindPropertyRelative(nameof(GUIDField._guid));
                     guid.stringValue = GUIDField.NewGUID();
                     guid.serializedObject.ApplyModifiedProperties();
+                    ((GUIDField)property1.GetValue()).DirtyHash();
                 }, property);
                 menu.AddItem(new GUIContent("Print Hash"), false, prop =>
                 {

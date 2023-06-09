@@ -111,7 +111,7 @@ namespace nickeltin.Core.Editor
 
             if (hasObjRef)
             {
-                if (e.type == EventType.MouseDown && localPosition.Contains(e.mousePosition))
+                if (e.rawType == EventType.MouseDown && localPosition.Contains(e.mousePosition))
                 {
                     if (e.clickCount == 1)
                     {
